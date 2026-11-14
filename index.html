@@ -886,6 +886,10 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
       .x-pg--acute { background: light-dark(#c62828, #e05252); } .x-pg--ltc { background: light-dark(#2e7d32, #3f9a45); }
       .x-pgc { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; }
       .x-ac .x-type, .x-types .x-type { display: inline-flex; align-items: center; justify-content: center; min-width: var(--tap); } .x-type:disabled { opacity: .45; cursor: default; }
+      .x-abm { margin-top: 8px; padding: 8px 12px; border: 1px solid var(--stroke-secondary); border-radius: var(--r-s); }
+      .x-abr { display: flex; align-items: center; gap: 6px; padding: 4px 0; font: var(--type-small); } .x-abr > span, .x-abr > input { flex: 1; min-width: 0; }
+      .x-abr > input { min-height: var(--tap); padding: 0 10px; border: 1px solid var(--stroke-secondary); border-radius: var(--r-s); background: none; color: var(--text-primary); font: var(--type-small); }
+      .x-abl { min-height: var(--tap); padding: 0; border: 0; background: none; color: var(--text-primary); font: var(--type-label); text-decoration: underline; cursor: pointer; }
       .x-ac .x-vh { margin: 12px 0 0; } .x-no { color: var(--fill-system-red); font: var(--type-label); font-weight: var(--weight-bold); margin: 6px 0 0; }
       .x-af { display: grid; grid-template-columns: 6.5em 5em 1fr; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--stroke-secondary); }
       .x-af input { min-width: 0; min-height: var(--tap); padding: 8px; border: 1px solid var(--stroke-secondary); border-radius: var(--r-s); background: var(--fill-primary-on); color: var(--text-primary); font: var(--type-small); font-size: 16px; box-sizing: border-box; }
@@ -988,7 +992,6 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             <label class="x-f">Gemini API 金鑰<input id="s-key" type="password" autocomplete="off" />
               <span class="x-hint" style="display: block">只存在這支手機，只用來讀血壓計照片</span></label>
             <label class="x-f">選填傳送網址（Google Apps Script）<input id="s-url" type="url" inputmode="url" placeholder="https://script.google.com/…" /></label>
-            <label class="x-f">急症抗生素清單（院長自訂清單，非建議；逗號分隔）<input id="s-abx" /></label>
             <div class="x-row">
               <button class="x-btn x-btn--primary" id="s-save">儲存設定</button>
               <button class="x-btn" id="s-test">測試金鑰</button>
@@ -1011,6 +1014,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           </div>
           <details class="x-card"><summary><span class="x-tri">▶</span>居家急症點數表</summary>
             <p class="x-hint">預設值，以最新公告為準（1150512 公告版）。每列：代碼／點數／名稱，下行備註</p>
+            <p class="x-hint">抗生素清單：在 Clinical course 的抗生素區管理</p>
             <div id="af-rows"></div>
             <div class="x-row" style="margin-top: 10px"><button class="x-btn x-btn--primary" id="af-save">儲存急症點數</button><button class="x-btn" id="af-reset">重設預設值</button></div>
           </details>
@@ -1040,7 +1044,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
               <li>展望目前無直接匯入，請複製病歷文字貼上。</li>
               <li>訪視照片從「📷 拍照／選照片」一個入口拍或選相簿，每張選類型：只有「血壓／血氧儀器」送 Gemini 讀數值（照片預設不保存，可勾選保存）。</li>
               <li>「健保卡＋傷口」「其他」加上姓名與原始拍攝時間浮水印（相簿舊照標「相簿」），只存在這支手機，不會上傳。</li>
-              <li>新增病人可拍或從相簿選健保卡/身分證自動填姓名、身分證字號、性別、生日：在手機上辨識（首次需網路下載辨識資料），照片不上傳也不保存，填完請核對。</li>
+              <li>新增病人可拍或從相簿選健保卡/身分證自動填姓名、身分證字號、性別、生日：有金鑰時送 Gemini（每次詢問同意，照片不保存），否則手機內辨識（首次需網路下載辨識資料）；最準的手機內做法是「📋 貼上證件文字」：照片 App 打開證件照 → 長按文字 → 全選 → 拷貝 → 貼上 → 解析填入（iPhone 原況文字，文字不保存、不外傳）；填完請核對。</li>
               <li>「💬 傳到 LINE」：分享選單選 LINE，會帶病歷文字和這次保存的照片；預設隱藏身分證字號末 4 碼。</li>
               <li>病人表單「VPN 收案資料」：依 VPN 順序填寫，每列可「複製」，或「📋 複製全部（VPN 順序）」；ICD 自動轉 VPN 填法（去小數點），隨病人存檔與 JSON 備份。</li>
               <li>「📄 拍出院病摘自動整理」：多頁照片或 PDF（≤15 MB）一次送 Gemini（含姓名、病歷，首次需同意，建議付費方案金鑰），逐欄、逐列勾選後套用；照片與 PDF 不保存，ICD 為 AI 建議請核對，取自入院評估的管路／傷口標「入院時，請確認現況」。</li>
@@ -1050,7 +1054,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
               <li>計價：病人表單「計價設定」填資源耗用群、安寧類別、山地離島、部分負擔身分與距離；打卡可勾緊急訪視；完成後顯示建議醫令與點數、可改的「家屬應付」與「📄 收據文字」；紀錄頁「本月計價」依月份加總並匯出 CSV；自費收費在設定頁填。健保點數為估算，以健保署公告為準。</li>
               <li>藥物與收據：病人表單「藥物」逐列填藥名、劑量、用法（選單＋補充）、來源與起始日，可新增、修改、刪除；VPN「出院用藥」改為顯示來源＝出院帶藥的列（舊資料已轉入），病摘匯入的出院用藥逐列勾選後加入（起始日＝出院日）；病歷文字「目前用藥」、CSV、JSON 備份都含用藥。照片選「收據」會送 Gemini 讀掛號費、部分負擔、藥品部分負擔、車馬費（常為手寫）與其他項目（與病摘同一次同意），完成打卡後填入「家屬應付」並標「辨識，請核對」，合計不符會提醒；收據照片加浮水印存在這次訪視，金額計入本月計價自費收入。</li>
               <li>失能家醫與床側檢驗：失能家醫訪視點選訪視方式（家訪／電話／其他）與 AA12 意見書（須家訪）、個案管理費（每月 1 次）即時算元，病人卡片顯示下次意見書與家訪到期（病人計價設定填失能家醫收案日，山地離島＝原民區／離島）；急症訪視展開「設備／床側檢驗」點選項目，表定點數 ×1.2（醫檢師/放射師執行 ×1.4）計入本日小計，不計部分負擔；兩張表在設定頁，預設值以最新公告為準。</li>
-              <li>🩺 Clinical course：病人急症病程逐日顯示目標內／外、點數與累計，填結案日與原因；每日點選醫師訪視方式（實地／視訊／電話(錄音)／緊急，視訊可標虛擬健保卡已過卡／NVIT，緊急填起迄時間、不在 18:00–08:00 會提醒）與「VPN 已登錄」，「缺醫師實地」只認方式＝實地或有醫師訪視紀錄；抗生素逐列填藥名（設定頁清單為院長自訂清單，非建議，可自填）、途徑、劑量、頻次、起迄／改口服日、輸液器一日型（迄日超過目標天數會提醒）與改藥原因，另填培養／菌株／敏感性；急症訪視的病歷文字多「急症療程」段，CSV 多急症Day、抗生素、培養三欄，JSON 備份隨病人資料保存。</li>
+              <li>🩺 Clinical course：病人急症病程逐日顯示目標內／外、點數與累計，填結案日與原因；每日點選醫師訪視方式（實地／視訊／電話(錄音)／緊急，視訊可標虛擬健保卡已過卡／NVIT，緊急填起迄時間、不在 18:00–08:00 會提醒）與「VPN 已登錄」，「缺醫師實地」只認方式＝實地或有醫師訪視紀錄；抗生素逐列填藥名（院長自訂清單，非建議；在藥名下按「管理清單」可刪除、排序、加入，自填藥名可按「加入清單」）、途徑、劑量、頻次、起迄／改口服日、輸液器一日型（迄日超過目標天數會提醒）與改藥原因，另填培養／菌株／敏感性；急症訪視的病歷文字多「急症療程」段，CSV 多急症Day、抗生素、培養三欄，JSON 備份隨病人資料保存。</li>
             </ul>
           </div>
           <div class="x-card">
@@ -1307,7 +1311,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           if (t === "visit") { renderPicker(); sizeSig(); schRender(); }
           if (t === "pat") renderPatients();
           if (t === "log") renderLog();
-          if (t === "set") { $("s-doc").value = set.doctor || ""; $("s-role").value = set.role || "醫師"; $("s-key").value = set.key || ""; $("s-url").value = set.url || ""; $("s-abx").value = abxL().join(", "); bSet(); }
+          if (t === "set") { $("s-doc").value = set.doctor || ""; $("s-role").value = set.role || "醫師"; $("s-key").value = set.key || ""; $("s-url").value = set.url || ""; bSet(); }
           window.scrollTo(0, 0);
         }
 
@@ -1757,7 +1761,11 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             `<div class="x-vr" style="align-items: center; margin-bottom: 10px"><p class="x-hint" style="margin: 0">狀態：<span class="chip">${esc(cur.status || "未收案")}</span></p><button type="button" class="x-btn x-btn--sm" id="pf-st">${stLbl(cur)}</button></div>` +
             `<div class="x-ocr"><button class="x-btn" id="pf-ocr">📇 拍照或選健保卡/身分證自動填</button>` +
             `<input class="x-file" type="file" id="pf-ocr-file" accept="image/*" />` +
-            `<p class="x-hint" id="pf-ocr-st" aria-live="polite">在手機上辨識，照片不外傳；請核對</p>` +
+            `<button type="button" class="x-btn x-btn--sm" id="pf-lt" aria-expanded="false" style="margin-top: 6px">📋 貼上證件文字</button>` +
+            `<div id="pf-lt-box" hidden style="margin-top: 6px"><p class="x-hint" style="margin: 0 0 4px">原況文字最準：照片 App 打開證件照 → 長按文字 → 全選 → 拷貝</p>` +
+            `<label class="x-f" style="margin-bottom: 6px"><textarea id="pf-lt-txt" autocomplete="off" aria-label="證件文字" placeholder="在照片或相機上長按文字 → 全選 → 拷貝，貼到這裡"></textarea></label>` +
+            `<button type="button" class="x-btn x-btn--sm" id="pf-lt-go">解析填入</button></div>` +
+            `<p class="x-hint" id="pf-ocr-st" aria-live="polite">${set.key ? "送 Gemini 辨識（每次詢問同意，照片不保存）" : "在手機上辨識，照片不外傳"}；請核對</p>` +
             `<p class="x-hint x-ocr-res" id="pf-ocr-res" hidden></p>` +
             `<details class="x-ocr-raw" id="pf-ocr-raw" hidden><summary>辨識原文（核對用）</summary><pre id="pf-ocr-txt"></pre></details></div>` +
             PF.map(([k, l, ta]) => pfField(k, l, ta, cur)).join("") + pgForm(cur) + mdForm(cur) + vForm(cur.vpn || {}) + bPatForm(cur) +
@@ -1785,6 +1793,29 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           if (p) $("pf-del").onclick = () => { if (confirm(`刪除「${p.name}」？（訪視紀錄會保留）`)) { patients = patients.filter((x) => x.id !== p.id); savePat(); closeSheet(); renderPatients(); } };
           $("pf-ocr").onclick = () => { loadTess().catch(() => {}); $("pf-ocr-file").click(); };
           $("pf-ocr-file").onchange = (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (f) runOcr(f); };
+          $("pf-lt").onclick = () => { const b = $("pf-lt-box"), o = b.hidden; b.hidden = !o; $("pf-lt").setAttribute("aria-expanded", o); if (o) $("pf-lt-txt").focus(); };
+          $("pf-lt-go").onclick = () => {
+            const t = $("pf-lt-txt"), raw = t.value;
+            t.value = "";
+            if (!raw.trim()) return toast("請先貼上證件文字");
+            cardFill(parsePaste(raw), null);
+            ocrSt("已解析貼上的文字，請核對；文字未保存");
+          };
+        }
+        // Live Text paste: parseCard plus 姓名-next-line and 健保卡 (name line, then ID) layouts
+        function parsePaste(raw) {
+          const r = parseCard(raw);
+          const lines = raw.split(/\n/).map((l) => l.replace(/\s+/g, "")).filter(Boolean);
+          if (/姓名[:：]?[\u4e00-\u9fff]{2,4}/.test(lines.join("\n"))) return r;
+          const isName = (x) => x && /^[\u4e00-\u9fff]{2,4}$/.test(x) && !LABELS.some((w) => x.includes(w) || w.includes(x));
+          const i = lines.findIndex((l) => /^姓名[:：]?$/.test(l));
+          if (i >= 0 && isName(lines[i + 1])) { r.name = lines[i + 1]; return r; }
+          if (r.id) {
+            const norm = (l) => l.toUpperCase().replace(/(?<=[A-Z0-9])O|O(?=\d)/g, "0").replace(/[IL|](?=\d)/g, "1");
+            const j = lines.findIndex((l) => norm(l).includes(r.id));
+            if (j > 0 && isName(lines[j - 1])) r.name = lines[j - 1];
+          }
+          return r;
         }
 
         // ---- on-device card OCR (Tesseract.js, runs only in this browser; the photo is never uploaded or stored) ----
@@ -1841,15 +1872,16 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             if (y < 1 || y > rocNow || mo < 1 || mo > 12 || d < 1 || d > 31) return;
             cands.push({ s: `${y + 1911}/${pad(mo)}/${pad(d)}`, y, near });
           };
-          const noId = flat.replace(/[A-Za-z][0-9OIl|]{9}/g, " ");
-          lines.forEach((l) => {
-            const near = /出生/.test(l);
+          // 只認「出生」那行或下一行的日期；發證／換補發日期一律忽略
+          lines.forEach((l, i) => {
+            if (/發證|換發|補發|初發|日期/.test(l) && !/出生/.test(l)) return;
+            const near = /出生/.test(l) ? 2 : i && /出生/.test(lines[i - 1]) ? 1 : 0;
+            if (!near) return;
             const t = l.replace(/[A-Za-z][0-9OIl|]{9}/g, " ");
             for (const m of t.matchAll(/(\d{2,3})年(\d{1,2})月(\d{1,2})日/g)) add(m[1], m[2], m[3], near);
             for (const m of t.matchAll(/(?<!\d)(\d{2,3})[\/.\-](\d{1,2})[\/.\-](\d{1,2})(?!\d)/g)) add(m[1], m[2], m[3], near);
             for (const m of t.matchAll(/(?<!\d)(\d{3})(\d{2})(\d{2})(?!\d)/g)) add(m[1], m[2], m[3], near);
           });
-          if (!cands.length) for (const m of noId.matchAll(/(\d{2,3})年(\d{1,2})月(\d{1,2})日/g)) add(m[1], m[2], m[3], false);
           if (cands.length) { cands.sort((a, b) => (b.near - a.near) || (a.y - b.y)); out.dob = cands[0].s; }
           // 性別
           if (out.id) out.sex = out.id[1] === "1" ? "男" : "女";
@@ -1872,6 +1904,39 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           el.value = val;
           return true;
         }
+        function cardFill(r, raw) {
+          const done = [];
+          if (r.name && fillField("pf-name", "姓名", r.name)) done.push("姓名 " + r.name);
+          if (r.id && fillField("pf-nid", "身分證字號", r.id)) { done.push("身分證字號 " + maskNid(r.id)); checkNid(); }
+          if (r.sex && fillField("pf-sex", "性別", r.sex)) done.push("性別 " + r.sex);
+          if (r.dob && fillField("pf-dob", "生日", r.dob)) done.push("生日 " + r.dob);
+          const res = $("pf-ocr-res");
+          res.textContent = done.length ? "已填：" + done.join("、") : "沒有可填入的欄位";
+          res.hidden = false;
+          $("pf-ocr-txt").textContent = raw || "";
+          $("pf-ocr-raw").hidden = raw == null;
+        }
+        const CARD_P = '這是台灣的健保卡或國民身分證照片。只回傳 JSON：{"name":"姓名","nid":"身分證字號","sex":"男或女","dob_roc":"民國出生年月日，如 45/03/12","dob":"出生日期 YYYY/MM/DD 西元（民國年+1911）","card_type":"健保卡|身分證正面|身分證背面|其他"}。生日只取「出生年月日」欄；絕對不要用發證日期、換發／補發／初發日期或其他日期。讀不清楚的欄位填空字串，不要猜測。';
+        // Gemini card OCR; returns true when filled, false to fall back to Tesseract
+        async function gemCard(file) {
+          try {
+            ocrSt("Gemini 辨識中…");
+            const data = await downscale(file, 1600, 0.85);
+            const { j } = await gemini(set.key, { contents: [{ parts: [{ text: CARD_P }, { inline_data: { mime_type: "image/jpeg", data: data.split(",")[1] } }] }], generationConfig: { responseMimeType: "application/json", temperature: 0 } }, ocrSt);
+            if (!$("pf-ocr-st")) return true;
+            let o = JSON.parse(((j.candidates && j.candidates[0].content.parts) || []).map((p) => p.text || "").join("").replace(/```json|```/g, ""));
+            o = (Array.isArray(o) ? o[0] : o) || {};
+            const S = (k) => String(o[k] == null ? "" : o[k]).trim();
+            const nid = S("nid").toUpperCase().replace(/\s/g, ""), okId = NID_RE.test(nid);
+            const ymd = (s, roc) => { const m = s.match(roc ? /^(\d{2,3})\D+(\d{1,2})\D+(\d{1,2})/ : /^(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); if (!m) return ""; const y = +m[1] + (roc ? 1911 : 0); return y > 1890 && y <= new Date().getFullYear() && +m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 ? `${y}/${pad(+m[2])}/${pad(+m[3])}` : ""; };
+            const sx = S("sex");
+            const r = { name: S("name").replace(/\s/g, ""), id: okId ? nid : "", sex: okId ? (nid[1] === "1" ? "男" : "女") : /^[男女]$/.test(sx) ? sx : "", dob: ymd(S("dob")) || ymd(S("dob_roc"), true) };
+            if (S("card_type") === "身分證背面") toast("這是背面，請拍正面");
+            cardFill(r, JSON.stringify({ ...o, nid: maskNid(S("nid")) }, null, 1));
+            ocrSt("Gemini 辨識完成，請核對");
+            return true;
+          } catch (e) { return false; }
+        }
         async function runOcr(file) {
           if (ocrBusy) return;
           ocrBusy = true;
@@ -1879,6 +1944,10 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           $("pf-ocr-res").hidden = true;
           let worker = null, canvas = null;
           try {
+            if (set.key && confirm("證件照片會傳到 Google Gemini 辨識（不保存）。同意送出？") && (await gemCard(file))) return;
+            if (!$("pf-ocr-st")) return;
+            ocrSt("改用手機內辨識（準確度較低）");
+            toast("改用手機內辨識（準確度較低）");
             ocrSt("下載辨識資料（首次約 1 分鐘）…");
             let T;
             try { T = await loadTess(); } catch (e) { ocrSt("需要網路下載辨識資料一次，之後可離線"); return; }
@@ -1896,18 +1965,8 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             const { data } = await worker.recognize(canvas);
             const raw = (data && data.text) || "";
             if (!$("pf-ocr-st")) return;
-            const r = parseCard(raw);
-            const done = [], seen = [];
-            if (r.name && fillField("pf-name", "姓名", r.name)) done.push("姓名 " + r.name);
-            if (r.id && fillField("pf-nid", "身分證字號", r.id)) { done.push("身分證字號 " + maskNid(r.id)); checkNid(); }
-            if (r.sex && fillField("pf-sex", "性別", r.sex)) done.push("性別 " + r.sex);
-            if (r.dob && fillField("pf-dob", "生日", r.dob)) done.push("生日 " + r.dob);
-            const res = $("pf-ocr-res");
-            res.textContent = done.length ? "已填：" + done.join("、") : "沒有可填入的欄位";
-            res.hidden = false;
-            $("pf-ocr-txt").textContent = raw.trim() || "（沒有辨識到文字）";
-            $("pf-ocr-raw").hidden = false;
-            ocrSt("辨識完成，請核對；照片未保存");
+            cardFill(parseCard(raw), raw.trim() || "（沒有辨識到文字）");
+            ocrSt("手機內辨識完成（準確度較低），請核對；照片未保存");
           } catch (e) {
             ocrSt("辨識失敗，請重拍或手動輸入");
           } finally {
@@ -1943,7 +2002,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
 
         // ---- settings ----
         $("s-save").addEventListener("click", () => {
-          set = { doctor: $("s-doc").value.trim() || "白惠文", role: $("s-role").value || "醫師", key: $("s-key").value.trim(), url: $("s-url").value.trim(), abx: $("s-abx").value.trim() };
+          set = { doctor: $("s-doc").value.trim() || "白惠文", role: $("s-role").value || "醫師", key: $("s-key").value.trim(), url: $("s-url").value.trim(), abx: set.abx };
           save("hc_settings", set); toast("設定已儲存");
         });
         $("s-test").addEventListener("click", async () => {
@@ -2697,6 +2756,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         const ACR = O("痊癒/轉住院/死亡/拒絕/其他"), dStr = (n) => new Date(n * 864e5).toISOString().slice(0, 10);
         // 4b：ep.abx [{n 藥名, r 途徑, d 劑量, f 頻次, s 起日, e 迄日/改口服日, inf 輸液器一日型, why 改藥原因}]、ep.cx 培養、ep.days[N] {mode, vc[], s, e 緊急起迄, vpn}
         const ABX0 = "Ceftriaxone, Ertapenem, Teicoplanin", abxL = () => (set.abx == null ? ABX0 : set.abx).split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+        let abxEd = -1;
         const AFQ = O("QD/BID/Q8H/Q12H/其他"), DM = O("實地/視訊/電話(錄音)/緊急"), offH = (t) => !!t && t > "08:00" && t < "18:00";
         const abxT = (x) => [x.n || "?", x.r, x.d, x.f, (x.s || x.e) && `${x.s ? sl(x.s) : "?"}～${x.e ? sl(x.e) : ""}`, x.inf && "輸液器一日型", x.why && `改藥原因：${x.why}`].filter(Boolean).join(" ");
         function accInfo(v, p) {
@@ -2736,8 +2796,9 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           }
           const tgtD = dStr(d0 + (r1.early ? capDay : AI[a.ind][1]) - 1), L = abxL(), ac = (i, k, v, on) => `<button type="button" class="x-type" data-ab="${i}|${k}|${esc(v)}" aria-pressed="${!!on}">${esc(v)}</button>`;
           const abxH = ep.abx.map((x, i) => `<div class="x-card">
-              <p class="x-vh">藥名 <small>院長自訂清單，非建議</small></p><div class="x-types">${L.map((n) => ac(i, "n", n, x.n === n)).join("")}</div>
-              <label class="x-f">其他藥名（自填）<input data-abt="${i}|n" value="${L.includes(x.n) ? "" : esc(x.n)}"></label>
+              <p class="x-vh">藥名 <small>院長自訂清單，非建議</small></p><div class="x-types">${L.map((n) => ac(i, "n", n, x.n === n)).join("")}<button type="button" class="x-btn x-btn--sm" data-abm="tog|${i}" aria-expanded="${abxEd === i}">管理清單</button></div>
+              ${abxEd === i ? `<div class="x-abm">${L.map((n, j) => `<div class="x-abr"><span>${esc(n)}</span><button type="button" class="x-type" data-abm="up|${j}" aria-label="上移"${j ? "" : " disabled"}>↑</button><button type="button" class="x-type" data-abm="dn|${j}" aria-label="下移"${j < L.length - 1 ? "" : " disabled"}>↓</button><button type="button" class="x-type" data-abm="del|${j}" aria-label="刪除">✕</button></div>`).join("")}<div class="x-abr"><input id="abm-in" placeholder="藥名" aria-label="新增藥名"><button type="button" class="x-btn x-btn--sm" data-abm="add|0">加入</button></div></div>` : ""}
+              <label class="x-f">其他藥名（自填）<input data-abt="${i}|n" value="${L.includes(x.n) ? "" : esc(x.n)}"></label>${x.n && !L.includes(x.n) ? `<button type="button" class="x-abl" data-abjoin="${i}">加入清單</button>` : ""}
               <p class="x-vh">途徑</p><div class="x-types">${O("IV/IM/PO").map((k) => ac(i, "r", k, x.r === k)).join("")}</div>
               <label class="x-f">劑量<input data-abt="${i}|d" value="${esc(x.d)}"></label>
               <p class="x-vh">頻次</p><div class="x-types">${AFQ.map((k) => ac(i, "f", k, x.f === k)).join("")}</div>
@@ -2765,6 +2826,13 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           box.querySelectorAll("[data-ab]").forEach((el) => (el.onclick = () => { const [i, k, v] = sp(el.dataset.ab), x = ep.abx[i]; if (k === "inf") x.inf = !x.inf; else x[k] = x[k] === v ? "" : v; savePat(); re(); }));
           box.querySelectorAll("[data-abt]").forEach((el) => (el.onchange = () => { const [i, k] = el.dataset.abt.split("|"); ep.abx[i][k] = el.value.trim(); savePat(); if ("ne".includes(k)) re(); }));
           box.querySelectorAll("[data-abdel]").forEach((el) => (el.onclick = () => { if (!confirm("刪除這列抗生素？")) return; ep.abx.splice(+el.dataset.abdel, 1); savePat(); re(); }));
+          const setL = (l) => { set.abx = l.join(", "); save("hc_settings", set); toast("已更新清單"); re(); }, cl = (s) => s.replace(/[,，]/g, " ").trim();
+          box.querySelectorAll("[data-abm]").forEach((el) => (el.onclick = () => { const [k, s] = el.dataset.abm.split("|"), j = +s, l = abxL();
+            if (k === "tog") { abxEd = abxEd === j ? -1 : j; return re(); }
+            if (k === "add") { const v = cl($("abm-in").value); if (!v) return toast("請輸入藥名"); if (l.includes(v)) return toast("清單已有此藥"); l.push(v); }
+            else if (k === "del") l.splice(j, 1); else { const t = k === "up" ? j - 1 : j + 1; [l[j], l[t]] = [l[t], l[j]]; }
+            setL(l); }));
+          box.querySelectorAll("[data-abjoin]").forEach((el) => (el.onclick = () => { const v = cl(ep.abx[el.dataset.abjoin].n || ""), l = abxL(); if (!v || l.includes(v)) return; ep.abx[el.dataset.abjoin].n = v; savePat(); setL([...l, v]); }));
           box.querySelector("[data-abadd]").onclick = () => { ep.abx.push({ n: "", r: "", d: "", f: "", s: "", e: "", inf: false, why: "" }); savePat(); re(); };
           $("acc-cx").onchange = (e) => { ep.cx = e.target.value.trim(); savePat(); };
           box.querySelectorAll("[data-acadd]").forEach((el) => (el.onclick = () => { if (draft.pid !== p.id) { draft = { pid: p.id }; saveDraft(); } closeSheet(); showTab("visit"); toast("已選病人，請按「開始訪視（到達）」"); }));
