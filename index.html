@@ -908,7 +908,8 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         <section class="x-pane" id="p-visit">
           <div class="x-card"><h2>今日／即將訪視</h2><ul class="x-list x-sch" id="sch-list"></ul></div>
           <div class="x-card" id="v-card">
-            <label class="x-f">病人<select id="v-pid"></select></label>
+            <label class="x-f" id="v-pid-f" style="display: none">病人<select id="v-pid"></select></label>
+            <p class="x-hint" id="v-none" hidden style="margin: 0 0 12px">尚無病人，請先到「<a class="link" href="#" id="v-none-go">病人</a>」新增</p>
             <div id="pg-v"></div>
             <button class="x-btn x-btn--primary" id="v-start">開始訪視（到達）</button>
             <div class="x-time"><span>到達 <b id="v-arr">--:--</b></span><span>離開 <b>--:--</b></span></div>
@@ -1295,10 +1296,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
         let patients = load("hc_patients", null);
-        if (!patients) {
-          patients = [{ id: uid(), name: "範例-王阿嬤", mrn: "A000001", dob: "1938/05/12", dx: "高血壓、第二型糖尿病、失智症", meds: "Amlodipine 5mg QD\nMetformin 500mg BID", lab: "2024/12 HbA1c 7.2%, Cr 1.1", note: "女兒照顧，下午較方便" }];
-          save("hc_patients", patients);
-        }
+        if (!Array.isArray(patients)) patients = [];
         let visits = load("hc_visits", []);
         let set = load("hc_settings", { doctor: "白惠文", role: "醫師", key: "", url: "" });
         let draft = load("hc_draft", {});
@@ -1446,19 +1444,22 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           sel.innerHTML = '<option value="">— 選擇病人 —</option>' + ["已收案", "未收案"].map((s) => { const g = pp.filter((p) => p.status === s); return g.length ? `<optgroup label="${s}">${g.map((p) => `<option value="${p.id}">${esc(p.name)}${p.mrn ? "（" + esc(p.mrn) + "）" : ""}${s === "未收案" ? "・初訪" : ""}</option>`).join("")}</optgroup>` : ""; }).join("");
           if (!pp.some((p) => p.id === draft.pid)) draft.pid = pp.length === 1 ? pp[0].id : "";
           sel.value = draft.pid || "";
+          $("v-pid-f").style.display = pp.length ? "" : "none"; $("v-none").hidden = !!pp.length;
+          $("v-none").firstChild.textContent = patients.length ? "沒有收案中的病人，請先到「" : "尚無病人，請先到「";
           $("v-arr").textContent = fTime(draft.arrive);
           renderInfo();
         }
         function renderInfo() {
           const p = patients.find((x) => x.id === draft.pid); tVisit(p); pgV();
-          if (!p) { $("v-kv").innerHTML = '<dd class="x-hint">請先選擇病人</dd>'; return; }
+          if (!p) { $("v-kv").innerHTML = `<dd class="x-hint">${patients.length ? "請先選擇病人" : "尚無病人，請先到「病人」新增"}</dd>`; return; }
           const last = visits.filter((v) => v.pid === p.id).sort((a, b) => b.arrive - a.arrive)[0];
           const lv = last ? `${fDate(last.arrive)}　BP ${last.vitals.sys || "-"}/${last.vitals.dia || "-"}` : "無";
           $("v-kv").innerHTML = [["診斷", p.dx], ["用藥", (p.medList || []).map((m) => rxT(m, 1)).join("\n")], ...(p.meds ? [["用藥備註", p.meds]] : []), ["最近檢驗", p.lab], ["上次訪視", lv]].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v || "—")}</dd>`).join("");
         }
         $("v-pid").addEventListener("change", (e) => { draft.pid = e.target.value; const s = scheds.find((x) => x.id === draft.sid); if (!s || s.pid !== draft.pid) delete draft.sid; saveDraft(); renderInfo(); });
+        $("v-none-go").addEventListener("click", (e) => { e.preventDefault(); showTab("pat"); });
         $("v-start").addEventListener("click", () => {
-          if (!draft.pid) return toast("請先選擇病人");
+          if (!draft.pid) return toast(patients.length ? "請先選擇病人" : "尚無病人，請先到「病人」新增");
           if (draft.arrive && !confirm("已記錄到達時間，要重新記錄嗎？")) return;
           draft.arrive = Date.now(); saveDraft(); $("v-arr").textContent = fTime(draft.arrive); toast("已記錄到達 " + fTime(draft.arrive));
         });
@@ -1777,7 +1778,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           const ps = patients.filter((p) => p.status === patSt && (!pgF || pgP(p).includes(pgF)));
           $("pg-seg").innerHTML = ["", ...Object.keys(PG)].map((k) => `<button type="button" class="x-type" data-pgf="${k}" aria-pressed="${k === pgF}">${k ? PG[k][1] : "全部"}</button>`).join("");
           $("pat-seg").innerHTML = ST.map((s) => `<button type="button" class="x-type" data-seg="${s}" aria-pressed="${s === patSt}">${s} ${patients.filter((p) => p.status === s).length}</button>`).join("");
-          $("pat-list").innerHTML = ps.length ? ps.map((p) => { const n = schNext(p.id), c = p.close; return `<li data-id="${p.id}"><div class="x-main"><b>${esc(p.name)}${pgP(p).map(pgTag).join("")}</b><small>${esc([p.mrn, maskNid(p.nid), p.sex, p.dx].filter(Boolean).join("・"))}</small>${c && p.status === "已結案" ? `<small>結案 ${esc(c.date.replace(/-/g, "/"))}・${esc(c.reason)}${c.text ? "（" + esc(c.text) + "）" : ""}</small>` : `<small>下次訪視：${n ? esc(n.date.replace(/-/g, "/") + " " + n.time) : "未預約"}</small>`}${p.status === "已收案" ? dueBadge(p.vpn) : ""}${tDue(p)}${lDue(p)}</div><div class="x-pbx">${p.status === "已結案" ? "" : '<button type="button" class="x-btn x-btn--sm x-pbtn" data-sch>📅 預約訪視</button>'}${pgP(p).includes("acute") ? '<button type="button" class="x-btn x-btn--sm x-pbtn" data-acc>🩺 Clinical course</button>' : ""}<button type="button" class="x-btn x-btn--sm x-pbtn" data-stb>${stLbl(p)}</button></div><span aria-hidden="true">›</span></li>`; }).join("") : `<li class="x-empty">沒有${patSt}的病人</li>`;
+          $("pat-list").innerHTML = ps.length ? ps.map((p) => { const n = schNext(p.id), c = p.close; return `<li data-id="${p.id}"><div class="x-main"><b>${esc(p.name)}${pgP(p).map(pgTag).join("")}</b><small>${esc([p.mrn, maskNid(p.nid), p.sex, p.dx].filter(Boolean).join("・"))}</small>${c && p.status === "已結案" ? `<small>結案 ${esc(c.date.replace(/-/g, "/"))}・${esc(c.reason)}${c.text ? "（" + esc(c.text) + "）" : ""}</small>` : `<small>下次訪視：${n ? esc(n.date.replace(/-/g, "/") + " " + n.time) : "未預約"}</small>`}${p.status === "已收案" ? dueBadge(p.vpn) : ""}${tDue(p)}${lDue(p)}</div><div class="x-pbx">${p.status === "已結案" ? "" : '<button type="button" class="x-btn x-btn--sm x-pbtn" data-sch>📅 預約訪視</button>'}${pgP(p).includes("acute") ? '<button type="button" class="x-btn x-btn--sm x-pbtn" data-acc>🩺 Clinical course</button>' : ""}<button type="button" class="x-btn x-btn--sm x-pbtn" data-stb>${stLbl(p)}</button></div><span aria-hidden="true">›</span></li>`; }).join("") : `<li class="x-empty">${patients.length ? `沒有${patSt}的病人` : "尚無病人，請按上方「＋ 新增病人」"}</li>`;
         }
         $("pat-seg").addEventListener("click", (e) => { const b = e.target.closest("[data-seg]"); if (b) { patSt = b.dataset.seg; renderPatients(); } });
         $("pat-list").addEventListener("click", (e) => { const li = e.target.closest("li[data-id]"); if (!li) return; if (e.target.closest("[data-sch]")) return schEdit({ pid: li.dataset.id }); if (e.target.closest("[data-acc]")) return accSheet(patients.find((p) => p.id === li.dataset.id)); if (e.target.closest("[data-stb]")) return stSheet(patients.find((p) => p.id === li.dataset.id)); editPatient(patients.find((p) => p.id === li.dataset.id)); });
