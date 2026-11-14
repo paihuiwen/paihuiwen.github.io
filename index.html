@@ -769,6 +769,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
       .x-btn--sm { width: auto; min-height: var(--tap); display: inline-flex; }
       .x-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
       .x-row > .x-btn { flex: 1; }
+      .x-btn[hidden] { display: none; }
       .x-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       label.x-f { display: block; font: var(--type-small); color: var(--text-secondary); margin-bottom: 10px; }
       .x-grid label.x-f { margin: 0; }
@@ -795,7 +796,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
       .x-list li { display: flex; align-items: center; gap: 10px; background: var(--fill-tertiary); border-radius: var(--r-m); padding: 12px 14px; margin-bottom: 8px; min-height: 56px; cursor: pointer; }
       .x-list .x-main { flex: 1; min-width: 0; }
       .x-list .x-main b { display: block; font-weight: var(--weight-medium); }
-      .x-list .x-main small { display: block; font: var(--type-small); color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .x-list .x-main small { display: block; font: var(--type-small); color: var(--text-secondary); overflow-wrap: anywhere; }
       .x-empty { text-align: center; color: var(--text-secondary); font: var(--type-small); padding: 24px 0; }
       .x-tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; justify-content: center; background: var(--mat-regular); backdrop-filter: var(--hark-blur); -webkit-backdrop-filter: var(--hark-blur); border-top: 1px solid var(--stroke-secondary); padding-bottom: env(safe-area-inset-bottom); }
       .x-tabs div { display: flex; width: 100%; max-width: 480px; }
@@ -822,6 +823,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
       .x-plist:empty { display: none; }
       .x-pc { display: grid; grid-template-columns: 84px 1fr; gap: 10px; background: var(--fill-primary-on); border: 1px solid var(--stroke-secondary); border-radius: var(--r-s); padding: 10px; }
       .x-pc img { width: 84px; height: 84px; object-fit: cover; border-radius: var(--r-s); background: var(--fill-tertiary); }
+      .x-pc__pdf { width: 84px; height: 84px; display: grid; place-items: center; border-radius: var(--r-s); background: var(--fill-tertiary); font: var(--type-label); color: var(--text-secondary); }
       .x-pc__meta { font: var(--type-small); color: var(--text-secondary); margin: 0; }
       .x-types { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
       .x-type { min-height: var(--tap); padding: 0 12px; border: 1px solid var(--stroke-secondary); border-radius: var(--r-pill); background: none; color: var(--text-primary); font: var(--type-small); cursor: pointer; }
@@ -918,9 +920,10 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           <div class="x-card">
             <h2>訪視照片</h2>
             <label class="x-btn x-btn--primary x-btn--big" for="v-photo">📷 拍照／選照片</label>
-            <input class="x-file" type="file" id="v-photo" accept="image/*" multiple />
-            <p class="x-hint">每張選類型：「血壓／血氧儀器」送 Gemini 讀數值（靠近拍、螢幕佔滿畫面）；「收據」送 Gemini 讀金額，照片保存為憑證；健保卡＋傷口、其他只存這支手機，不會上傳</p>
+            <input class="x-file" type="file" id="v-photo" accept="image/*,application/pdf" multiple />
+            <p class="x-hint">所有照片與文件都從這裡。每張選類型：「血壓／血氧儀器」送 Gemini 讀數值（靠近拍、螢幕佔滿畫面）；「收據」送 Gemini 讀金額，照片保存為憑證；「病摘／轉介單」「證件」按「整理到病人資料」，不存為訪視照片；健保卡＋傷口、其他只存這支手機，不會上傳</p>
             <ul class="x-plist" id="v-plist"></ul>
+            <button type="button" class="x-btn x-btn--primary" id="v-doc" hidden style="margin-top: 10px">整理到病人資料</button>
           </div>
           <div class="x-card">
             <h2>生命徵象</h2>
@@ -986,9 +989,11 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
               <label class="x-f">職稱<select id="s-role"><option>醫師</option><option>護理師</option><option>其他</option></select></label>
             </div>
             <label class="x-f">Gemini API 金鑰<input id="s-key" type="password" autocomplete="off" />
-              <span class="x-hint" style="display: block">只存在這支手機，只用來讀血壓計照片</span></label>
-            <label class="x-f">選填傳送網址（Google Apps Script）<input id="s-url" type="url" inputmode="url" placeholder="https://script.google.com/…" /></label>
-            <label class="x-keep"><input type="checkbox" id="s-ocr">顯示證件辨識按鈕（新增病人）</label>
+              <span class="x-hint" style="display: block">只存在這支手機；用來讀血壓計照片，證件、病摘、收據須另外同意才送出</span></label>
+            <details class="x-bs" id="s-adv"><summary><span class="x-tri">▶</span>進階</summary>
+              <label class="x-f">選填傳送網址（Google Apps Script）<input id="s-url" type="url" inputmode="url" placeholder="https://script.google.com/…" /></label>
+              <label class="x-keep"><input type="checkbox" id="s-ocr">顯示「📋 貼上證件文字」（病人表單）</label>
+            </details>
             <div class="x-row">
               <button class="x-btn x-btn--primary" id="s-save">儲存設定</button>
               <button class="x-btn" id="s-test">測試金鑰</button>
@@ -1039,12 +1044,12 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             <ul class="x-help">
               <li>安裝：Safari → 分享 → 加入主畫面。</li>
               <li>展望目前無直接匯入，請複製病歷文字貼上。</li>
-              <li>訪視照片從「📷 拍照／選照片」一個入口拍或選相簿，每張選類型：只有「血壓／血氧儀器」送 Gemini 讀數值（照片預設不保存，可勾選保存）。</li>
+              <li>所有照片與文件（含病摘、證件、PDF）都從訪視打卡「📷 拍照／選照片」一個入口拍或選相簿，每張選類型：「血壓／血氧儀器」送 Gemini 讀數值（照片預設不保存，可勾選保存）；「病摘／轉介單」「證件」不存為訪視照片，按「整理到病人資料」開啟目前選的病人（未選則新增病人）表單整理，完成後從照片列表移除。</li>
               <li>「健保卡＋傷口」「其他」加上姓名與原始拍攝時間浮水印（相簿舊照標「相簿」），只存在這支手機，不會上傳。</li>
-              <li>證件辨識預設關閉，可在設定勾選「顯示證件辨識按鈕」開啟。開啟後新增病人可拍或從相簿選健保卡/身分證自動填姓名、身分證字號、性別、生日：有金鑰時送 Gemini（每次詢問同意，照片不保存），否則手機內辨識（首次需網路下載辨識資料）；最準的手機內做法是「📋 貼上證件文字」：照片 App 打開證件照 → 長按文字 → 全選 → 拷貝 → 貼上 → 解析填入（iPhone 原況文字，文字不保存、不外傳）；填完請核對。</li>
+              <li>證件：照片選「證件」→「整理到病人資料」自動填姓名、身分證字號、性別、生日：有金鑰時送 Gemini（每次詢問同意，照片不保存），否則手機內辨識（首次需網路下載辨識資料）。設定勾選「顯示「📋 貼上證件文字」」後，病人表單可用最準的手機內做法「📋 貼上證件文字」：照片 App 打開證件照 → 長按文字 → 全選 → 拷貝 → 貼上 → 解析填入（iPhone 原況文字，文字不保存、不外傳）；填完請核對。</li>
               <li>「💬 傳到 LINE」：分享選單選 LINE，會帶病歷文字和這次保存的照片；預設隱藏身分證字號末 4 碼。</li>
               <li>病人表單「VPN 收案資料」：依 VPN 順序填寫，每列可「複製」，或「📋 複製全部（VPN 順序）」；ICD 自動轉 VPN 填法（去小數點），隨病人存檔與 JSON 備份。</li>
-              <li>「📄 拍出院病摘／出院準備轉介單自動整理」：多頁照片或 PDF（≤15 MB）一次送 Gemini（含姓名、病歷，首次需同意，建議付費方案金鑰），連同姓名、生日、身分證字號、性別、病歷號一起整理（與表單現有值不同者預設不勾），逐欄、逐列勾選後套用；照片與 PDF 不保存，ICD 為 AI 建議請核對，取自入院評估的管路／傷口標「入院時，請確認現況」。</li>
+              <li>出院病摘／出院準備轉介單：照片選「病摘／轉介單」→「整理到病人資料」，多頁照片或 PDF（≤15 MB）一次送 Gemini（含姓名、病歷，首次需同意，建議付費方案金鑰），連同姓名、生日、身分證字號、性別、病歷號一起整理（與表單現有值不同者預設不勾），逐欄、逐列勾選後套用；照片與 PDF 不保存，ICD 為 AI 建議請核對，取自入院評估的管路／傷口標「入院時，請確認現況」。</li>
               <li>「📅 預約訪視」（病人卡片或病摘套用後）：預約列在訪視打卡頁上方，按「開始打卡」完成後自動標完成，可「加入 iPhone 行事曆」（標題只寫姓O，提前 30 分提醒）；VPN 區填「收案日期」後，未勾「已上傳 VPN」會顯示 14 天到期提醒，剩 3 天內或逾期轉紅。</li>
               <li>管路：病人表單逐項填鼻胃管、導尿管、氣切管、胃造口、膀胱造口、其他的有無、規格、材質、更換頻率與上次更換日，自動算下次更換日（舊資料已轉入）；3 天內到期或逾期在今日／即將與病人卡片顯示「管路待換」；打卡勾「本次更換管路」會更新上次更換日並寫入病歷文字（如「更換 Foley 16Fr 矽質」）。</li>
               <li>收案狀態：病人頁依「未收案／已收案／已結案」篩選（附人數），病摘匯入的新病人為未收案（待初訪）；按「收案」填收案日期與照護階段後開始 VPN 14 天提醒，「結案」填日期與原因後不再列入今日／即將與 VPN 提醒，可「重新收案」；打卡選病人時已收案在前、未收案標「初訪」，已結案不列出。</li>
@@ -1063,6 +1068,20 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
               <li><b>資料：</b>每支手機資料各自獨立。病人名單可由「備份 JSON／還原 JSON」複製到同事手機，只能面對面用 AirDrop，不要傳群組。</li>
               <li><b>備份：</b>每週備份一次。</li>
             </ol>
+          </div>
+          <div class="x-card">
+            <h2>參考連結</h2>
+            <p style="margin: 0"><a class="link" href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener">取得／管理 Gemini API 金鑰（Google AI Studio）</a></p>
+            <details class="x-bs"><summary><span class="x-tri">▶</span>上傳新版到 GitHub（步驟）</summary>
+              <ol style="margin: 0 0 8px; padding-left: 1.4em; font: var(--type-small)">
+                <li>在 Hark 點開新的 index.html 檔案 → 分享 → 儲存到檔案。</li>
+                <li>用 Safari 或 Chrome 打開 <a class="link" href="https://github.com/paihuiwen/paihuiwen.github.io" target="_blank" rel="noopener">github.com/paihuiwen/paihuiwen.github.io</a>（已登入）；看不到按鈕就切換「桌面版網站」。</li>
+                <li>點 Add file → Upload files → choose your files，從「檔案」選 index.html（檔名必須是 index.html，才會覆蓋舊版）。</li>
+                <li>往下捲到底點綠色 Commit changes。</li>
+                <li>等約 1 分鐘，從主畫面圖示重新開啟；網址不變，資料和金鑰都會保留。</li>
+                <li>保險起見，上傳前先按「設定 → 備份 JSON」。</li>
+              </ol>
+            </details>
           </div>
         </section>
       </div>
@@ -1306,7 +1325,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           if (t === "visit") { renderPicker(); sizeSig(); schRender(); }
           if (t === "pat") renderPatients();
           if (t === "log") renderLog();
-          if (t === "set") { $("s-doc").value = set.doctor || ""; $("s-role").value = set.role || "醫師"; $("s-key").value = set.key || ""; $("s-url").value = set.url || ""; $("s-ocr").checked = !!set.cardOcr; bSet(); }
+          if (t === "set") { $("s-doc").value = set.doctor || ""; $("s-role").value = set.role || "醫師"; $("s-key").value = set.key || ""; $("s-url").value = set.url || ""; $("s-adv").open = !!set.url; $("s-ocr").checked = !!set.cardOcr; bSet(); }
           window.scrollTo(0, 0);
         }
 
@@ -1520,8 +1539,9 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         }
 
         // ---- pending visit photos: one entry, a type per photo ----
-        const PT = { dev: "血壓／血氧儀器", card: "健保卡＋傷口", rcpt: "收據", other: "其他" };
-        const PT_SHORT = { dev: "儀器", card: "健保卡＋傷口", rcpt: "收據", other: "其他" };
+        const PT = { dev: "血壓／血氧儀器", card: "健保卡＋傷口", rcpt: "收據", sum: "病摘／轉介單", id: "證件", other: "其他" };
+        const PT_SHORT = { dev: "儀器", card: "健保卡＋傷口", rcpt: "收據", sum: "病摘", id: "證件", other: "其他" };
+        const isDoc = (it) => it.type === "sum" || it.type === "id";
         async function ocrItem(it) {
           const st = (m) => { it.msg = m; renderPending(); };
           if (!set.key) return st("未設定 Gemini 金鑰，請手動輸入");
@@ -1638,13 +1658,24 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
 
         function renderPending() {
           $("v-plist").innerHTML = items.map((it, i) => `<li class="x-pc" data-id="${it.id}">
-            <img src="${it.full}" alt="照片 ${i + 1}：${esc(PT[it.type])}">
-            <div><p class="x-pc__meta">${esc(twStamp(it.time))}${it.lib ? "（相簿）" : ""}</p>
-              <div class="x-types" role="group" aria-label="照片類型">${Object.keys(PT).map((k) => `<button type="button" class="x-type" data-type="${k}" aria-pressed="${it.type === k}">${PT[k]}</button>`).join("")}</div></div>
-            <div class="x-pc__foot">${it.type === "dev"
+            ${it.pdf ? `<span class="x-pc__pdf">PDF</span>` : `<img src="${it.full}" alt="照片 ${i + 1}：${esc(PT[it.type])}">`}
+            <div><p class="x-pc__meta">${it.pdf ? esc(it.file.name) : esc(twStamp(it.time)) + (it.lib ? "（相簿）" : "")}</p>
+              <div class="x-types" role="group" aria-label="照片類型">${(it.pdf ? ["sum"] : Object.keys(PT)).map((k) => `<button type="button" class="x-type" data-type="${k}" aria-pressed="${it.type === k}">${PT[k]}</button>`).join("")}</div></div>
+            <div class="x-pc__foot">${isDoc(it) ? '<p class="x-pc__st">按「整理到病人資料」，不存為訪視照片</p>' : it.type === "dev"
               ? `<p class="x-pc__st" aria-live="polite">${esc(it.msg || "")}</p><label class="x-keep"><input type="checkbox" data-keep${it.keep ? " checked" : ""}>也保存照片</label>`
               : it.type === "rcpt" ? `<p class="x-pc__st" aria-live="polite">${esc(it.msg || "送 Gemini 讀金額；照片保存為收費憑證")}</p>` : '<p class="x-pc__st">只存這支手機，不會上傳</p>'}<button type="button" class="x-btn x-btn--sm" data-del>刪除</button></div></li>`).join("");
+          $("v-doc").hidden = !items.some(isDoc);
         }
+        // 病摘／證件 → patient form (selected patient or new), then the existing card OCR and 病摘 import
+        $("v-doc").addEventListener("click", async () => {
+          const docs = items.filter(isDoc); if (!docs.length) return toast("請先把照片類型選為「病摘／轉介單」或「證件」");
+          const ids = docs.filter((it) => it.type === "id").map((it) => it.file), sums = docs.filter((it) => it.type === "sum").map((it) => it.file);
+          items = items.filter((it) => !isDoc(it)); renderPending();
+          if (ids.length) loadTess().catch(() => {});
+          editPatient(patients.find((x) => x.id === draft.pid) || null, ids.length > 0);
+          for (const f of ids) { if (!$("pf-ocr-st")) return; await runOcr(f); }
+          if (sums.length && $("vp")) { $("vp").open = true; $("vp-ai-st").scrollIntoView({ behavior: "smooth", block: "center" }); await vAi(sums); }
+        });
         $("v-plist").addEventListener("click", (e) => {
           const li = e.target.closest("li[data-id]"); if (!li) return;
           const it = items.find((x) => x.id === li.dataset.id); if (!it) return;
@@ -1666,13 +1697,14 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           const files = [...e.target.files]; e.target.value = "";
           if (!files.length) return;
           const p = patients.find((x) => x.id === draft.pid);
-          if (!p) return toast("請先選擇病人（照片會加上姓名）");
+          if (!p) toast("未選病人：病摘／證件可整理到新病人；其他照片完成打卡時加上姓名");
           for (const f of files) {
             try {
+              if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) { items.push({ id: uid(), file: f, pdf: true, type: "sum" }); renderPending(); continue; }
               const now = Date.now(), time = (await exifTime(f)) || f.lastModified || now;
               const lib = Math.abs(now - time) > 600000;
-              const full = await downscale(f, 1600, 0.8, `${p.name} · ${twStamp(time)}${lib ? "（相簿）" : ""}`);
-              items.push({ id: uid(), file: f, time, lib, full, type: "card", keep: false });
+              const full = await downscale(f, 1600, 0.8, `${p ? p.name + " · " : ""}${twStamp(time)}${lib ? "（相簿）" : ""}`);
+              items.push({ id: uid(), file: f, time, lib, full, type: "card", keep: false, nn: !p });
               renderPending();
             } catch (err) { toast("無法讀取照片"); }
           }
@@ -1700,7 +1732,8 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           if (items.some((it) => it.type === "rcpt" && it.busy)) return toast("收據辨識中，請稍候");
           const now = Date.now(), vitals = {};
           VF.forEach((k) => { const v = $(k).value.trim(); if (v) vitals[k] = v; });
-          const kept = items.filter((it) => it.type !== "dev" || it.keep);
+          const kept = items.filter((it) => !isDoc(it) && (it.type !== "dev" || it.keep));
+          for (const it of kept) if (it.nn) { it.full = await downscale(it.file, 1600, 0.8, `${p.name} · ${twStamp(it.time)}${it.lib ? "（相簿）" : ""}`); it.nn = false; }
           const id = uid(), keys = kept.map((_, i) => id + "-" + i);
           const stored = await Promise.all(kept.map((it, i) => pPut(keys[i], it.full)));
           if (persist && stored.includes(false)) toast("照片無法存入手機，請先備份");
@@ -1749,17 +1782,16 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         $("pat-seg").addEventListener("click", (e) => { const b = e.target.closest("[data-seg]"); if (b) { patSt = b.dataset.seg; renderPatients(); } });
         $("pat-list").addEventListener("click", (e) => { const li = e.target.closest("li[data-id]"); if (!li) return; if (e.target.closest("[data-sch]")) return schEdit({ pid: li.dataset.id }); if (e.target.closest("[data-acc]")) return accSheet(patients.find((p) => p.id === li.dataset.id)); if (e.target.closest("[data-stb]")) return stSheet(patients.find((p) => p.id === li.dataset.id)); editPatient(patients.find((p) => p.id === li.dataset.id)); });
         $("pat-add").addEventListener("click", () => editPatient(null));
-        function editPatient(p) {
+        function editPatient(p, ocr) {
           const cur = p || {};
           pfP = p;
           openSheet(`<h2>${p ? "編輯病人" : "新增病人"}</h2><div id="vp-due"></div>` +
             `<div class="x-vr" style="align-items: center; margin-bottom: 10px"><p class="x-hint" style="margin: 0">狀態：<span class="chip">${esc(cur.status || "未收案")}</span></p><button type="button" class="x-btn x-btn--sm" id="pf-st">${stLbl(cur)}</button></div>` +
-            (set.cardOcr ? `<div class="x-ocr"><button class="x-btn" id="pf-ocr">📇 拍照或選健保卡/身分證自動填</button>` +
-            `<input class="x-file" type="file" id="pf-ocr-file" accept="image/*" />` +
-            `<button type="button" class="x-btn x-btn--sm" id="pf-lt" aria-expanded="false" style="margin-top: 6px">📋 貼上證件文字</button>` +
+            (set.cardOcr || ocr ? `<div class="x-ocr">` + (set.cardOcr ?
+            `<button type="button" class="x-btn x-btn--sm" id="pf-lt" aria-expanded="false">📋 貼上證件文字</button>` +
             `<div id="pf-lt-box" hidden style="margin-top: 6px"><p class="x-hint" style="margin: 0 0 4px">原況文字最準：照片 App 打開證件照 → 長按文字 → 全選 → 拷貝</p>` +
             `<label class="x-f" style="margin-bottom: 6px"><textarea id="pf-lt-txt" autocomplete="off" aria-label="證件文字" placeholder="在照片或相機上長按文字 → 全選 → 拷貝，貼到這裡"></textarea></label>` +
-            `<button type="button" class="x-btn x-btn--sm" id="pf-lt-go">解析填入</button></div>` +
+            `<button type="button" class="x-btn x-btn--sm" id="pf-lt-go">解析填入</button></div>` : "") +
             `<p class="x-hint" id="pf-ocr-st" aria-live="polite">${set.key ? "送 Gemini 辨識（每次詢問同意，照片不保存）" : "在手機上辨識，照片不外傳"}；請核對</p>` +
             `<p class="x-hint x-ocr-res" id="pf-ocr-res" hidden></p>` +
             `<details class="x-ocr-raw" id="pf-ocr-raw" hidden><summary>辨識原文（核對用）</summary><pre id="pf-ocr-txt"></pre></details></div>` : "") +
@@ -1786,9 +1818,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             checkNid();
           });
           if (p) $("pf-del").onclick = () => { if (confirm(`刪除「${p.name}」？（訪視紀錄會保留）`)) { patients = patients.filter((x) => x.id !== p.id); savePat(); closeSheet(); renderPatients(); } };
-          if (!$("pf-ocr")) return;
-          $("pf-ocr").onclick = () => { loadTess().catch(() => {}); $("pf-ocr-file").click(); };
-          $("pf-ocr-file").onchange = (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (f) runOcr(f); };
+          if (!$("pf-lt")) return;
           $("pf-lt").onclick = () => { const b = $("pf-lt-box"), o = b.hidden; b.hidden = !o; $("pf-lt").setAttribute("aria-expanded", o); if (o) $("pf-lt-txt").focus(); };
           $("pf-lt-go").onclick = () => {
             const t = $("pf-lt-txt"), raw = t.value;
@@ -2144,8 +2174,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           if (!v.wds && (v.skSite || v.skSize || v.skGrade || v.skType)) v.wds = [{ t: v.skType || "", s: v.skSite || "", z: v.skSize || "", g: v.skGrade || "" }];
           vAdl = ADL.map((_, i) => ((v.adl || [])[i] == null ? null : v.adl[i])); vAiOut = null; vAdm = new Set(v.adm || []);
           return `<details class="x-card" id="vp"><summary><span class="x-tri">▶</span>VPN 收案資料</summary>
-            <button type="button" class="x-btn" id="vp-ai">📄 拍出院病摘／出院準備轉介單自動整理</button><input class="x-file" type="file" id="vp-ai-f" accept="image/*,application/pdf" multiple />
-            <p class="x-hint" id="vp-ai-st" aria-live="polite">可選多頁照片或 PDF（≤15 MB），一次送 Gemini；照片與 PDF 不保存</p><div id="vp-ai-box"></div>
+            <p class="x-hint" id="vp-ai-st" aria-live="polite">出院病摘／轉介單：在訪視打卡「📷 拍照／選照片」選「病摘／轉介單」（多頁照片或 PDF ≤15 MB）→「整理到病人資料」；照片與 PDF 不保存</p><div id="vp-ai-box"></div>
             <div class="x-row"><button type="button" class="x-btn x-btn--primary" id="vp-all">📋 複製全部（VPN 順序）</button></div>
             ${VS.map((f) => (f.length === 1 ? `<p class="x-vh">${f[0]}</p>` : `<div class="x-vr"${f[4] ? ` data-g="${f[4]}"` : ""}>${vCtl(f, v)}<button type="button" class="x-btn x-btn--sm x-cp" data-cp="${f[0]}">複製</button></div>`)).join("")}</details>`;
         }
@@ -2201,7 +2230,6 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             else if (b.dataset.mdel != null) b.parentNode.remove();
             else if (b.dataset.radd) $("vp-" + b.dataset.radd).insertAdjacentHTML("beforeend", rowH(b.dataset.radd));
             else if (b.id === "vp-all") vCopyAll();
-            else if (b.id === "vp-ai") $("vp-ai-f").click();
             else if (b.id === "vp-ai-apply") vApply();
             else if (b.id === "vp-ai-x") { $("vp-ai-box").innerHTML = ""; vAiOut = null; }
             else if (b.id === "vp-sch") { $("pf-save").click(); if ($("sheet").hidden && pfP) schEdit({ pid: pfP.id }); }
@@ -2211,7 +2239,6 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             if (f && f[2] === "icd") { const el = e.target, p = el.selectionStart, up = el.value.toUpperCase(); if (up !== el.value) { el.value = up; try { el.setSelectionRange(p, p); } catch (_) {} } vIcd(k); }
           });
           $("vp-stage").addEventListener("change", vHosp);
-          $("vp-ai-f").onchange = (e) => { const fs = [...(e.target.files || [])]; e.target.value = ""; if (fs.length) vAi(fs); };
         }
         // keep only values that fit each field
         function vClean(out) {
@@ -2250,7 +2277,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           }
           const MB15 = 15 * 1024 * 1024, isPdf = (f) => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
           if (files.some((f) => isPdf(f) && f.size > MB15)) return vSt("檔案超過 15 MB，請改用拍照方式匯入");
-          $("vp-ai").disabled = true; vSt(`整理 ${files.length} 個檔案中…`);
+          vSt(`整理 ${files.length} 個檔案中…`);
           try {
             const pages = []; let bytes = 0;
             for (const f of files) {
@@ -2285,7 +2312,6 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
               '<div class="x-row"><button type="button" class="x-btn x-btn--primary" id="vp-ai-apply">套用</button><button type="button" class="x-btn" id="vp-ai-x">取消</button></div>' : "";
             vSt(ks.length ? `已整理（模型：${model}），請核對後套用` : "沒有整理出資料，請手動填寫");
           } catch (err) { vSt(err && err.status != null ? gemErr("整理失敗", err) + "，請手動填寫" : "整理失敗：無法解析結果，請重試或手動填寫"); }
-          finally { if ($("vp-ai")) $("vp-ai").disabled = false; }
         }
         function vApply() {
           if (!vAiOut) return;
