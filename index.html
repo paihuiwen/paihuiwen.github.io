@@ -1044,7 +1044,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
               <li>證件辨識預設關閉，可在設定勾選「顯示證件辨識按鈕」開啟。開啟後新增病人可拍或從相簿選健保卡/身分證自動填姓名、身分證字號、性別、生日：有金鑰時送 Gemini（每次詢問同意，照片不保存），否則手機內辨識（首次需網路下載辨識資料）；最準的手機內做法是「📋 貼上證件文字」：照片 App 打開證件照 → 長按文字 → 全選 → 拷貝 → 貼上 → 解析填入（iPhone 原況文字，文字不保存、不外傳）；填完請核對。</li>
               <li>「💬 傳到 LINE」：分享選單選 LINE，會帶病歷文字和這次保存的照片；預設隱藏身分證字號末 4 碼。</li>
               <li>病人表單「VPN 收案資料」：依 VPN 順序填寫，每列可「複製」，或「📋 複製全部（VPN 順序）」；ICD 自動轉 VPN 填法（去小數點），隨病人存檔與 JSON 備份。</li>
-              <li>「📄 拍出院病摘自動整理」：多頁照片或 PDF（≤15 MB）一次送 Gemini（含姓名、病歷，首次需同意，建議付費方案金鑰），逐欄、逐列勾選後套用；照片與 PDF 不保存，ICD 為 AI 建議請核對，取自入院評估的管路／傷口標「入院時，請確認現況」。</li>
+              <li>「📄 拍出院病摘／出院準備轉介單自動整理」：多頁照片或 PDF（≤15 MB）一次送 Gemini（含姓名、病歷，首次需同意，建議付費方案金鑰），連同姓名、生日、身分證字號、性別、病歷號一起整理（與表單現有值不同者預設不勾），逐欄、逐列勾選後套用；照片與 PDF 不保存，ICD 為 AI 建議請核對，取自入院評估的管路／傷口標「入院時，請確認現況」。</li>
               <li>「📅 預約訪視」（病人卡片或病摘套用後）：預約列在訪視打卡頁上方，按「開始打卡」完成後自動標完成，可「加入 iPhone 行事曆」（標題只寫姓O，提前 30 分提醒）；VPN 區填「收案日期」後，未勾「已上傳 VPN」會顯示 14 天到期提醒，剩 3 天內或逾期轉紅。</li>
               <li>管路：病人表單逐項填鼻胃管、導尿管、氣切管、胃造口、膀胱造口、其他的有無、規格、材質、更換頻率與上次更換日，自動算下次更換日（舊資料已轉入）；3 天內到期或逾期在今日／即將與病人卡片顯示「管路待換」；打卡勾「本次更換管路」會更新上次更換日並寫入病歷文字（如「更換 Foley 16Fr 矽質」）。</li>
               <li>收案狀態：病人頁依「未收案／已收案／已結案」篩選（附人數），病摘匯入的新病人為未收案（待初訪）；按「收案」填收案日期與照護階段後開始 VPN 14 天提醒，「結案」填日期與原因後不再列入今日／即將與 VPN 提醒，可「重新收案」；打卡選病人時已收案在前、未收案標「初訪」，已結案不列出。</li>
@@ -2144,7 +2144,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           if (!v.wds && (v.skSite || v.skSize || v.skGrade || v.skType)) v.wds = [{ t: v.skType || "", s: v.skSite || "", z: v.skSize || "", g: v.skGrade || "" }];
           vAdl = ADL.map((_, i) => ((v.adl || [])[i] == null ? null : v.adl[i])); vAiOut = null; vAdm = new Set(v.adm || []);
           return `<details class="x-card" id="vp"><summary><span class="x-tri">▶</span>VPN 收案資料</summary>
-            <button type="button" class="x-btn" id="vp-ai">📄 拍出院病摘自動整理</button><input class="x-file" type="file" id="vp-ai-f" accept="image/*,application/pdf" multiple />
+            <button type="button" class="x-btn" id="vp-ai">📄 拍出院病摘／出院準備轉介單自動整理</button><input class="x-file" type="file" id="vp-ai-f" accept="image/*,application/pdf" multiple />
             <p class="x-hint" id="vp-ai-st" aria-live="polite">可選多頁照片或 PDF（≤15 MB），一次送 Gemini；照片與 PDF 不保存</p><div id="vp-ai-box"></div>
             <div class="x-row"><button type="button" class="x-btn x-btn--primary" id="vp-all">📋 複製全部（VPN 順序）</button></div>
             ${VS.map((f) => (f.length === 1 ? `<p class="x-vh">${f[0]}</p>` : `<div class="x-vr"${f[4] ? ` data-g="${f[4]}"` : ""}>${vCtl(f, v)}<button type="button" class="x-btn x-btn--sm x-cp" data-cp="${f[0]}">複製</button></div>`)).join("")}</details>`;
@@ -2228,10 +2228,24 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           });
           return r;
         }
+        // patient-form basics from the discharge doc; same checks as parseCard; dob written as YYYY/MM/DD like card OCR
+        let vAiPf = {};
+        const pfNorm = (k, s) => (k === "dob" ? s.replace(/[-.]/g, "/") : k === "nid" ? s.toUpperCase() : s);
+        function pfAi(o) {
+          const r = {}, g = (k) => (o["p_" + k] == null ? "" : String(o["p_" + k]).replace(/\s+/g, k === "name" ? "" : " ").trim());
+          const nm = g("name"); if (nm && nm.length <= 20) r.name = nm;
+          const m = g("dob").match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/), yr = new Date().getFullYear();
+          if (m && +m[1] > 1900 && +m[1] <= yr && +m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31) r.dob = `${m[1]}/${pad(+m[2])}/${pad(+m[3])}`;
+          const id = g("nid").toUpperCase().replace(/\s/g, ""), nid = id ? id[0] + id.slice(1).replace(/O/g, "0").replace(/[IL|]/g, "1") : "";
+          if (NID_RE.test(nid)) r.nid = nid;
+          const sx = g("sex"); if (sx === "男" || sx === "女") r.sex = sx;
+          const mr = g("mrn"); if (mr && $("pf-mrn")) r.mrn = mr;
+          return r;
+        }
         async function vAi(files) {
           if (!set.key) return vSt("未設定 Gemini 金鑰（設定頁），請手動填寫");
           if (!load("hc_ai_ok", false)) {
-            if (!confirm("出院病摘照片或 PDF（含姓名、病歷號等個資）會送到 Google Gemini 整理成欄位，照片與 PDF 不保存。\n建議使用付費方案金鑰（免費方案的資料可能被用於改進模型）。\n同意後這支手機不再詢問。")) return vSt("已取消");
+            if (!confirm("出院病摘／出院準備轉介單照片或 PDF（含姓名、生日、身分證字號、病歷號等個資）會送到 Google Gemini 整理成欄位，照片與 PDF 不保存。\n建議使用付費方案金鑰（免費方案的資料可能被用於改進模型）。\n同意後這支手機不再詢問。")) return vSt("已取消");
             save("hc_ai_ok", true);
           }
           const MB15 = 15 * 1024 * 1024, isPdf = (f) => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
@@ -2245,7 +2259,8 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             }
             if (bytes > MB15) { pages.length = 0; return vSt(files.length > 1 ? "檔案合計超過 15 MB，請減少檔案或改用拍照方式匯入" : "檔案超過 15 MB，請改用拍照方式匯入"); }
             const RJ = (k) => "，陣列 [{" + RC[k].map(([f, l, o]) => `"${f}":"${l}${o ? "，只能是 " + o.join("|") + " 其一" : ""}"`).join(",") + (k === "wds" ? ',"a":true 或 false' : "") + "}]";
-            const prompt = "以下照片／PDF 是同一位病人的出院病摘（多頁）。擷取資料，只回傳一個 JSON 物件；找不到的鍵省略，不要猜測。鍵與格式：\n" +
+            const prompt = "以下照片／PDF 是同一位病人的出院病摘／出院準備轉介單（多頁）。擷取資料，只回傳一個 JSON 物件；找不到的鍵省略，不要猜測。鍵與格式：\n" +
+              "p_name：病人姓名\np_dob：病人出生日期，YYYY-MM-DD 西元（民國年+1911）；只取生日，絕對不要用入院、出院、發證或其他日期\np_nid：身分證字號，1 個大寫英文字母 + 9 碼數字\np_sex：性別，只能是 男|女 其一\np_mrn：病歷號\n" +
               VF2.filter((f) => f[2] !== "adl" && f[2] !== "cb").map(([k, l, t, o]) => `${k}：${l}` + (t === "s" ? `，只能是 ${o.join("|")} 其一` : t === "m" ? `，字串陣列，取自 ${o.join("|")}` : t === "ta" ? `，繁體中文，≤${o} 字` : t === "icd" ? "，ICD-10-CM 代碼，大寫含小數點，如 E11.9" : t === "d" ? "，YYYY-MM-DD" : t === "rows" ? RJ(k) : t === "rx" ? RXJ : t === "tubes" ? TJ : "")).join("\n") + "\ndcDate：出院日期，YYYY-MM-DD" +
               `\nadm：字串陣列，列出值取自「入院評估」而非出院時現況的管路鍵（${TUBE.join("|")}，t_ 後為 tubes 的鍵）` +
               "\ndx1 為主診斷，dx2 到 dx6 為次診斷（最多 5 個）。summary 條列出院病摘重點。cts 為聯絡人，o 為醫療決策代理人順位。pain 為疼痛分數，painSite 為疼痛部位。tubes 的 s 為規格（如 16Fr、2-way），f 為更換頻率天數。allergy 為過敏史。" +
@@ -2257,9 +2272,12 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             if (Array.isArray(out)) out = out[0] || {};
             out = out || {}; vAiOut = vClean(out);
             vAiAdm = new Set((Array.isArray(out.adm) ? out.adm : []).filter((k) => TUBE.includes(k) && (vAiOut.tubes || {})[k.slice(2)]));
-            const ks = Object.keys(vAiOut);
+            vAiPf = pfAi(out);
+            const pks = Object.keys(vAiPf), ks = Object.keys(vAiOut);
             const ln = (k, i, l, s, chip) => `<label class="x-keep x-aip"><input type="checkbox" data-ai="${k}"${i == null ? "" : ` data-i="${i}"`} checked><span><b>${esc(l)}</b>：${esc(s)}${chip ? " " + chip : ""}</span></label>`;
-            $("vp-ai-box").innerHTML = ks.length ? `<p class="x-vh">勾選要套用的欄位與列</p>` + ks.map((k) => { const f = vF(k), x = vAiOut[k], t = f[2];
+            const pln = (k) => { const v = vAiPf[k], el = $("pf-" + k), c = el ? el.value.trim() : "", diff = c && pfNorm(k, c) !== pfNorm(k, v);
+              return `<label class="x-keep x-aip"><input type="checkbox" data-pf="${k}"${diff ? "" : " checked"}><span><b>${esc(PF.find((f) => f[0] === k)[1])}</b>：${esc(v)}${diff ? ` <span class="chip">目前：${esc(c)}</span>` : ""}</span></label>`; };
+            $("vp-ai-box").innerHTML = ks.length + pks.length ? `<p class="x-vh">勾選要套用的欄位與列</p>` + pks.map(pln).join("") + ks.map((k) => { const f = vF(k), x = vAiOut[k], t = f[2];
               if (t === "rows" || t === "rx") return x.map((m, i) => ln(k, i, `${f[1]} ${i + 1}`, t === "rx" ? rxT(m, 1) : rTxt(k, m), m.a ? ADMC : "")).join("");
               if (t === "tubes") return Object.keys(x).map((tk) => ln(k, tk, tNm(tk, x[tk]), tLine(tk, x[tk]), vAiAdm.has("t_" + tk) ? ADMC : "")).join("");
               const s = t === "m" ? x.join("、") : t === "icd" ? `${x}（VPN：${icdNo(x)}）` : x;
@@ -2271,6 +2289,8 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         }
         function vApply() {
           if (!vAiOut) return;
+          $("vp-ai-box").querySelectorAll("[data-pf]:checked").forEach((c) => { const k = c.dataset.pf, el = $("pf-" + k); if (el && vAiPf[k]) { el.value = vAiPf[k]; if (k === "nid") checkNid(); } });
+          vAiPf = {};
           const sel = {};
           $("vp-ai-box").querySelectorAll("[data-ai]:checked").forEach((c) => (sel[c.dataset.ai] = sel[c.dataset.ai] || []).push(c.dataset.i));
           Object.entries(sel).forEach(([k, is]) => {
