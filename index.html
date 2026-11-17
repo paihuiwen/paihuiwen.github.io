@@ -896,13 +896,35 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
       .x-bs summary { list-style: none; cursor: pointer; font: var(--type-label); font-weight: var(--weight-medium); min-height: var(--tap); display: flex; align-items: center; }
       .x-bs summary::-webkit-details-marker { display: none; } .x-bs[open] summary .x-tri { transform: rotate(90deg); }
       .x-ltb { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; }
+
+      /* ---- v2.0：口述 SOAP、AI 填欄位、個案摘要 ---- */
+      .x-f input.x-ai, .x-f textarea.x-ai { border: 2px solid #e0a100; background: light-dark(#fff8e1, #3a2f0c); }
+      .x-keep.x-ai { outline: 2px solid #e0a100; border-radius: var(--r-s); padding: 0 6px; }
+      .x-ai-chip { background: #e0a100; color: #1d1d1f; }
+      .x-soap { min-height: 220px !important; font-size: 16px !important; line-height: 1.5; }
+      .x-rec { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px 12px; border-radius: var(--r-s); background: light-dark(#fde8e8, #3a1414); }
+      .x-rec[hidden] { display: none; }
+      .x-rec b { font: var(--type-heading); font-variant-numeric: tabular-nums; flex: 1; }
+      .x-rec__dot { width: 14px; height: 14px; border-radius: 50%; background: var(--fill-system-red); animation: x-blink 1s infinite; flex: none; }
+      @keyframes x-blink { 50% { opacity: .25; } }
+      .x-dcf { margin-top: 10px; padding: 10px 12px; border: 2px solid #e0a100; border-radius: var(--r-s); }
+      .x-dcf:empty { display: none; }
+      .x-dc-st.x-err { color: var(--fill-system-red); font-weight: var(--weight-bold); }
+      .x-ver { font: var(--type-caption); }
+      .x-row[hidden], .x-bs[hidden] { display: none; }
+      #x-print { display: none; }
+      @media print {
+        html.x-prt body > *:not(#x-print) { display: none !important; }
+        html.x-prt #x-print { display: block; white-space: pre-wrap; font: 12pt/1.55 -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; color: #000; padding: 0; }
+        html.x-prt { background: #fff; }
+      }
     </style>
   </head>
   <body>
     <div class="page" id="top">
       <div class="x-app">
         <div class="x-banner" id="banner" hidden>預覽模式：資料不會保存，請用 Safari 開啟並加入主畫面</div>
-        <div class="x-top"><h1 id="title">訪視打卡</h1><small id="today"></small></div>
+        <div class="x-top"><h1 id="title">訪視打卡</h1><small><span id="today"></span>・<span class="x-ver">v2.0</span></small></div>
 
         <!-- 訪視打卡 -->
         <section class="x-pane" id="p-visit">
@@ -942,6 +964,10 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             <h2>本次更換管路</h2>
             <div id="v-tubes"></div>
             <p class="x-hint">勾選的管路在完成打卡時更新上次更換日，並寫入病歷文字</p>
+          </div>
+          <div class="x-card" id="v-dict">
+            <h2>🎙 口述 → SOAP</h2>
+            <div id="dc-v"></div>
           </div>
           <div class="x-card">
             <label class="x-f">評估備註<textarea id="v-s" placeholder="症狀觀察…"></textarea></label>
@@ -1040,8 +1066,17 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             <input class="x-file" type="file" id="s-restore" accept="application/json,.json" />
             <div class="x-row"><button class="x-btn x-btn--danger" id="s-wipe">清除資料</button></div>
           </div>
+          <div class="x-card" id="v2-new">
+            <h2>v2.0 新功能 <span class="chip">v2.0</span></h2>
+            <ul class="x-help">
+              <li><b>🎙 口述 → SOAP：</b>訪視打卡頁「🎙 口述 → SOAP」按「開始口述」錄音（國語／台語混合可），按「停止並整理」送 Gemini 轉成 S/O/A/P（繁體中文，醫學名詞英文），可修改，「📋 複製 SOAP」貼到展望；完成打卡時存在這次訪視，紀錄頁點開訪視也可補錄或修改。音檔不保存。錄音不能用時，展開「⌨️ 改用鍵盤聽寫」，用 iPhone 鍵盤 🎤 聽寫後按「整理成 SOAP」。</li>
+              <li><b>口述自動填欄位：</b>同一次口述會列出 AI 建議的生命徵象（血壓、心率、血氧、體溫、體重）、評估備註、處置/醫囑、本次更換管路，急症個案另列抗生素；空白欄位預設勾選，已有值的欄位預設不勾（勾選才覆寫）；按「確認填入」才寫入，AI 填入的欄位加黃框，請核對後再完成打卡。呼吸次數、血糖、疼痛等沒有對應欄位的數值寫在 SOAP 的 O。</li>
+              <li><b>📝 個案摘要：</b>病人頁每位病人的「📝 個案摘要」，選用途（轉診／急診／家屬）→「產生摘要」：把基本資料、診斷、用藥、管路、照護計畫、急症病程與最近 5 次訪視送 Gemini 寫成一頁摘要，可修改、複製、列印或分享。送出前移除姓名、身分證字號、電話、地址、病歷號；姓名、性別、年齡、病歷號只在手機上加到摘要開頭。摘要存在這支手機的病人資料。</li>
+              <li>第一次使用 v2.0 AI 功能會詢問同意，之後不再詢問。原有資料、設定與金鑰都保留，不需重新輸入。</li>
+            </ul>
+          </div>
           <div class="x-card">
-            <h2>說明</h2>
+            <h2>說明 <span class="chip">v2.0</span></h2>
             <ul class="x-help">
               <li>安裝：Safari → 分享 → 加入主畫面。</li>
               <li>展望目前無直接匯入，請複製病歷文字貼上。</li>
@@ -1302,7 +1337,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         let draft = load("hc_draft", {});
         const savePat = () => save("hc_patients", patients);
         const saveVisits = () => save("hc_visits", visits);
-        const saveDraft = () => save("hc_draft", { pid: draft.pid, arrive: draft.arrive, sid: draft.sid });
+        const saveDraft = () => save("hc_draft", { pid: draft.pid, arrive: draft.arrive, sid: draft.sid, ...(draft.soap ? { soap: draft.soap, soapTx: draft.soapTx || "" } : {}) });
         let scheds = load("hc_scheds", []);
         const saveSch = () => save("hc_scheds", scheds);
 
@@ -1352,7 +1387,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             `本次訪視計畫：${PG[pgOf(v)][0]}　收案計畫：${pgP(p).map((k) => PG[k][1]).join("、")}`,
             ...(p.nid || p.sex ? [`身分證字號：${mask ? maskNid(p.nid) : p.nid || ""}　性別：${p.sex || ""}`] : []),
             `到達 ${fTime(v.arrive)}　離開 ${fTime(v.leave)}（${mins} 分鐘）`,
-            `S：${v.s || ""}`, `O：${o.join(", ")}`, `A/P：${v.p || ""}`, ...(v.tch || []), ...(v.rx && v.rx.length ? ["目前用藥：", ...v.rx.map((m) => "・" + rxT(m, 1))] : []), ...accTxt(v, p),
+            ...(v.soap && !v.s ? [] : [`S：${v.s || ""}`]), `O：${o.join(", ")}`, ...(v.soap && !v.p ? [] : [`A/P：${v.p || ""}`]), ...(v.soap ? ["【SOAP】", v.soap] : []), ...(v.tch || []), ...(v.rx && v.rx.length ? ["目前用藥：", ...v.rx.map((m) => "・" + rxT(m, 1))] : []), ...accTxt(v, p),
             `記錄者：${v.role || (v.doctor ? "醫師" : set.role || "醫師")} ${v.doctor || set.doctor || "白惠文"}`,
           ].join("\n");
         }
@@ -1396,15 +1431,17 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             ${v.photos && v.photos.length ? `<div class="x-thumbs" id="sh-thumbs">${v.photos.map((s, i) => { const t = (v.ptypes || [])[i]; return t ? `<figure><img alt="照片 ${i + 1}：${PT_SHORT[t] || ""}" data-i="${i}"><figcaption>${esc(PT_SHORT[t] || t)}</figcaption></figure>` : `<img alt="照片 ${i + 1}" data-i="${i}">`; }).join("")}</div>` : ""}
             ${v.sig ? `<p class="x-hint">簽章</p><img src="${v.sig}" alt="簽章" style="width:100%;background:#fff;border-radius:12px">` : ""}
             ${bHtml(v)}
+            <details class="x-bs" id="sh-dc"${v.soap ? " open" : ""}><summary><span class="x-tri">▶</span>🎙 口述 SOAP${v.soap ? "" : "（補錄）"}</summary><div id="sh-dc-box"></div></details>
             <div class="x-row"><button class="x-btn x-btn--line" id="sh-line">💬 傳到 LINE</button></div>
             <label class="x-keep"><input type="checkbox" id="sh-mask"${lineMask ? " checked" : ""}>隱藏身分證字號</label>
             <div class="x-row"><button class="x-btn x-btn--primary" id="sh-copy">📋 複製病歷文字</button>${navigator.share ? '<button class="x-btn" id="sh-share">分享</button>' : ""}</div>
             <div class="x-row">${isNew ? "" : '<button class="x-btn x-btn--danger" id="sh-del">刪除</button>'}<button class="x-btn" data-close>關閉</button></div>`);
-          $("sh-copy").onclick = () => copyText(text);
+          $("sh-copy").onclick = () => copyText(visitText(v));
+          dcUI($("sh-dc-box"), dcSaved(v));
           bWire(v); visitFiles(v);
           $("sh-mask").onchange = (e) => { lineMask = e.target.checked; };
           $("sh-line").onclick = () => shareLine(v, $("sh-mask").checked, () => toast("請再按一次「傳到 LINE」"));
-          if ($("sh-share")) $("sh-share").onclick = () => navigator.share({ title: "居家醫療訪視", text }).catch(() => {});
+          if ($("sh-share")) $("sh-share").onclick = () => navigator.share({ title: "居家醫療訪視", text: visitText(v) }).catch(() => {});
           if ($("sh-del")) $("sh-del").onclick = () => { if (confirm("刪除這筆紀錄？")) { (v.photos || []).forEach((k) => { if (!isData(k)) pDel(k); }); visits = visits.filter((x) => x.id !== v.id); saveVisits(); closeSheet(); renderLog(); } };
           const box = $("sh-thumbs");
           if (box) {
@@ -1447,7 +1484,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           $("v-pid-f").style.display = pp.length ? "" : "none"; $("v-none").hidden = !!pp.length;
           $("v-none").firstChild.textContent = patients.length ? "沒有收案中的病人，請先到「" : "尚無病人，請先到「";
           $("v-arr").textContent = fTime(draft.arrive);
-          renderInfo();
+          renderInfo(); dcSync();
         }
         function renderInfo() {
           const p = patients.find((x) => x.id === draft.pid); tVisit(p); pgV();
@@ -1568,9 +1605,9 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         const GEM_BUSY = "伺服器忙碌，改用其他模型…";
         const GEM_TIMEOUT = 25000;
         // fetch with a 25-second abort timeout
-        async function gemFetch(url, opts) {
+        async function gemFetch(url, opts, ms) {
           const ac = new AbortController();
-          const t = setTimeout(() => ac.abort(), GEM_TIMEOUT);
+          const t = setTimeout(() => ac.abort(), ms || GEM_TIMEOUT);
           try { return await fetch(url, { ...opts, signal: ac.signal }); }
           finally { clearTimeout(t); }
         }
@@ -1601,7 +1638,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             return merge(list);
           } catch (e) { return GEM_MODELS.slice(); }
         }
-        async function gemini(key, body, onBusy, refresh, onLog) {
+        async function gemini(key, body, onBusy, refresh, onLog, ms) {
           key = String(key || "").trim();
           const tag = key.slice(-8);
           const log = (t) => { if (onLog) onLog(t); };
@@ -1622,7 +1659,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
               r = await gemFetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent", {
                 method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key },
                 body: JSON.stringify(body),
-              });
+              }, ms);
             } catch (e) {
               // network error, "Load failed", TypeError or timeout: treat like 503 and move on
               const timeout = e && e.name === "AbortError";
@@ -1731,6 +1768,9 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           const p = patients.find((x) => x.id === draft.pid);
           if (!p) return toast("請先選擇病人");
           if (items.some((it) => it.type === "rcpt" && it.busy)) return toast("收據辨識中，請稍候");
+          if (dcRec && dcRec.o.mode === "draft") return toast("口述錄音中，請先按「停止並整理」或「取消」");
+          if (dcBusy) return toast("SOAP 整理中，請稍候");
+          if (dcPend && !confirm("AI 建議的欄位還沒按「確認填入」，完成打卡將不套用這些建議。繼續？")) return;
           const now = Date.now(), vitals = {};
           VF.forEach((k) => { const v = $(k).value.trim(); if (v) vitals[k] = v; });
           const kept = items.filter((it) => !isDoc(it) && (it.type !== "dev" || it.keep));
@@ -1743,6 +1783,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             vitals, s: $("v-s").value.trim(), p: $("v-p").value.trim(), doctor: set.doctor || "白惠文", role: set.role || "醫師",
             photos: keys, ptypes: kept.map((it) => it.type), sig: signed ? cv.toDataURL("image/png") : "",
           };
+          { const so = ($("dc-v").querySelector("[data-dc-out]") || {}).value; const s = String(so == null ? draft.soap || "" : so).trim(); if (s) { v.soap = s; if (draft.soapTx) v.soapTx = draft.soapTx; } }
           const sc = scheds.find((x) => x.id === draft.sid && x.pid === p.id);
           if (sc) { v.sid = sc.id; sc.done = true; sc.vid = id; saveSch(); }
           tDone(p, v); bDone(p, v); xDone(p, v);
@@ -1755,7 +1796,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           // reset form
           draft = { pid: p.id }; saveDraft(); items = []; renderPending(); clearSig();
           VF.forEach((k) => { $(k).value = ""; $(k).classList.remove("x-bad"); });
-          $("v-s").value = $("v-p").value = ""; $("v-arr").textContent = "--:--"; $("b-emg").setAttribute("aria-pressed", "false"); $("b-ind").innerHTML = bIndH(); bEmg(); renderInfo();
+          $("v-s").value = $("v-p").value = ""; $("v-arr").textContent = "--:--"; dcPend = null; dcAiClear(); dcUI($("dc-v"), dcDraft); $("b-emg").setAttribute("aria-pressed", "false"); $("b-ind").innerHTML = bIndH(); bEmg(); renderInfo();
         });
 
         // ---- patients ----
@@ -1778,10 +1819,10 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           const ps = patients.filter((p) => p.status === patSt && (!pgF || pgP(p).includes(pgF)));
           $("pg-seg").innerHTML = ["", ...Object.keys(PG)].map((k) => `<button type="button" class="x-type" data-pgf="${k}" aria-pressed="${k === pgF}">${k ? PG[k][1] : "全部"}</button>`).join("");
           $("pat-seg").innerHTML = ST.map((s) => `<button type="button" class="x-type" data-seg="${s}" aria-pressed="${s === patSt}">${s} ${patients.filter((p) => p.status === s).length}</button>`).join("");
-          $("pat-list").innerHTML = ps.length ? ps.map((p) => { const n = schNext(p.id), c = p.close; return `<li data-id="${p.id}"><div class="x-main"><b>${esc(p.name)}${pgP(p).map(pgTag).join("")}</b><small>${esc([p.mrn, maskNid(p.nid), p.sex, p.dx].filter(Boolean).join("・"))}</small>${c && p.status === "已結案" ? `<small>結案 ${esc(c.date.replace(/-/g, "/"))}・${esc(c.reason)}${c.text ? "（" + esc(c.text) + "）" : ""}</small>` : `<small>下次訪視：${n ? esc(n.date.replace(/-/g, "/") + " " + n.time) : "未預約"}</small>`}${p.status === "已收案" ? dueBadge(p.vpn) : ""}${tDue(p)}${lDue(p)}</div><div class="x-pbx">${p.status === "已結案" ? "" : '<button type="button" class="x-btn x-btn--sm x-pbtn" data-sch>📅 預約訪視</button>'}${pgP(p).includes("acute") ? '<button type="button" class="x-btn x-btn--sm x-pbtn" data-acc>🩺 Clinical course</button>' : ""}<button type="button" class="x-btn x-btn--sm x-pbtn" data-stb>${stLbl(p)}</button></div><span aria-hidden="true">›</span></li>`; }).join("") : `<li class="x-empty">${patients.length ? `沒有${patSt}的病人` : "尚無病人，請按上方「＋ 新增病人」"}</li>`;
+          $("pat-list").innerHTML = ps.length ? ps.map((p) => { const n = schNext(p.id), c = p.close; return `<li data-id="${p.id}"><div class="x-main"><b>${esc(p.name)}${pgP(p).map(pgTag).join("")}</b><small>${esc([p.mrn, maskNid(p.nid), p.sex, p.dx].filter(Boolean).join("・"))}</small>${c && p.status === "已結案" ? `<small>結案 ${esc(c.date.replace(/-/g, "/"))}・${esc(c.reason)}${c.text ? "（" + esc(c.text) + "）" : ""}</small>` : `<small>下次訪視：${n ? esc(n.date.replace(/-/g, "/") + " " + n.time) : "未預約"}</small>`}${p.status === "已收案" ? dueBadge(p.vpn) : ""}${tDue(p)}${lDue(p)}</div><div class="x-pbx">${p.status === "已結案" ? "" : '<button type="button" class="x-btn x-btn--sm x-pbtn" data-sch>📅 預約訪視</button>'}${pgP(p).includes("acute") ? '<button type="button" class="x-btn x-btn--sm x-pbtn" data-acc>🩺 Clinical course</button>' : ""}<button type="button" class="x-btn x-btn--sm x-pbtn" data-sum>📝 個案摘要</button><button type="button" class="x-btn x-btn--sm x-pbtn" data-stb>${stLbl(p)}</button></div><span aria-hidden="true">›</span></li>`; }).join("") : `<li class="x-empty">${patients.length ? `沒有${patSt}的病人` : "尚無病人，請按上方「＋ 新增病人」"}</li>`;
         }
         $("pat-seg").addEventListener("click", (e) => { const b = e.target.closest("[data-seg]"); if (b) { patSt = b.dataset.seg; renderPatients(); } });
-        $("pat-list").addEventListener("click", (e) => { const li = e.target.closest("li[data-id]"); if (!li) return; if (e.target.closest("[data-sch]")) return schEdit({ pid: li.dataset.id }); if (e.target.closest("[data-acc]")) return accSheet(patients.find((p) => p.id === li.dataset.id)); if (e.target.closest("[data-stb]")) return stSheet(patients.find((p) => p.id === li.dataset.id)); editPatient(patients.find((p) => p.id === li.dataset.id)); });
+        $("pat-list").addEventListener("click", (e) => { const li = e.target.closest("li[data-id]"); if (!li) return; if (e.target.closest("[data-sch]")) return schEdit({ pid: li.dataset.id }); if (e.target.closest("[data-acc]")) return accSheet(patients.find((p) => p.id === li.dataset.id)); if (e.target.closest("[data-sum]")) return sumSheet(patients.find((p) => p.id === li.dataset.id)); if (e.target.closest("[data-stb]")) return stSheet(patients.find((p) => p.id === li.dataset.id)); editPatient(patients.find((p) => p.id === li.dataset.id)); });
         $("pat-add").addEventListener("click", () => editPatient(null));
         function editPatient(p, ocr) {
           const cur = p || {};
@@ -2021,9 +2062,9 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         $("csv").addEventListener("click", () => {
           if (!visits.length) return toast("尚無紀錄");
           const q = (s) => `"${String(s == null ? "" : s).replace(/"/g, '""')}"`;
-          const head = ["日期", "病人", "病歷號", "計畫", "身分證字號", "性別", "到達", "離開", "分鐘", "收縮壓", "舒張壓", "心率", "血氧", "體溫", "體重", "S", "A/P", "醫師", "目前用藥", "急症Day", "抗生素", "培養"];
+          const head = ["日期", "病人", "病歷號", "計畫", "身分證字號", "性別", "到達", "離開", "分鐘", "收縮壓", "舒張壓", "心率", "血氧", "體溫", "體重", "S", "A/P", "醫師", "目前用藥", "急症Day", "抗生素", "培養", "SOAP"];
           const pOf = (v) => patients.find((x) => x.id === v.pid) || {};
-          const rows = visits.map((v) => [fDate(v.arrive), v.pname, v.mrn, PG[pgOf(v)][1], pOf(v).nid || "", pOf(v).sex || "", fTime(v.arrive), fTime(v.leave), Math.round((v.leave - v.arrive) / 60000), ...VF.map((k) => v.vitals[k] || ""), v.s, v.p, v.doctor, (v.rx || []).map((m) => rxT(m, 1)).join("；"), ...((i) => (i ? [i.day, i.abx.join("；"), i.cx] : ["", "", ""]))(accInfo(v, pOf(v)))]);
+          const rows = visits.map((v) => [fDate(v.arrive), v.pname, v.mrn, PG[pgOf(v)][1], pOf(v).nid || "", pOf(v).sex || "", fTime(v.arrive), fTime(v.leave), Math.round((v.leave - v.arrive) / 60000), ...VF.map((k) => v.vitals[k] || ""), v.s, v.p, v.doctor, (v.rx || []).map((m) => rxT(m, 1)).join("；"), ...((i) => (i ? [i.day, i.abx.join("；"), i.cx] : ["", "", ""]))(accInfo(v, pOf(v))), v.soap || ""]);
           download(`居家訪視_${fDate(Date.now()).replace(/\//g, "")}.csv`, "\ufeff" + [head, ...rows].map((r) => r.map(q).join(",")).join("\r\n"), "text/csv;charset=utf-8");
         });
 
@@ -2881,7 +2922,339 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           box.querySelectorAll("[data-acadd]").forEach((el) => (el.onclick = () => { if (draft.pid !== p.id) { draft = { pid: p.id }; saveDraft(); } closeSheet(); showTab("visit"); toast("已選病人，請按「開始訪視（到達）」"); }));
         }
 
+        // ==== v2.0 ====
+        // ---- 🎙 語音口述 → SOAP＋口述自動填欄位：訪視 v.soap（SOAP 文字）、v.soapTx（逐字稿）；草稿存 hc_draft.soap；音檔不保存 ----
+        const APP_VER = "v2.0", DC_MAX = 600, DC_MB = 14 * 1024 * 1024;
+        let dcRec = null, dcBusy = false, dcPend = null, dcLast = null;
+        const dcDraft = { mode: "draft", pid: () => draft.pid, get: () => draft.soap || "", tx: () => draft.soapTx || "", set: (s, tx) => { draft.soap = s; if (tx != null) draft.soapTx = tx; saveDraft(); } };
+        const dcSaved = (v) => ({ mode: "saved", v, pid: () => v.pid, get: () => v.soap || "", tx: () => v.soapTx || "", set: (s, tx) => { if (s) v.soap = s; else delete v.soap; if (tx != null) v.soapTx = tx; saveVisits(); } });
+        const mmss = (s) => pad(Math.floor(s / 60)) + ":" + pad(s % 60);
+        function aiOk() {
+          if (load("hc_ai_v2_ok", false)) return true;
+          if (!confirm("v2.0 AI 功能（口述 SOAP、個案摘要）會把口述錄音／文字，以及病人的臨床資料（不含姓名、身分證字號、電話、地址、病歷號）送到 Google Gemini 整理，錄音不保存。\n口述時請避免說出姓名、身分證字號、電話。\n建議使用付費方案金鑰（免費方案的資料可能被用於改進模型）。\n同意後這支手機不再詢問。")) return false;
+          save("hc_ai_v2_ok", true); return true;
+        }
+        // supported recorder type: iOS Safari → audio/mp4; Chrome/Android → audio/webm. null = no MediaRecorder
+        function dcMime() {
+          if (!window.MediaRecorder) return null;
+          if (typeof MediaRecorder.isTypeSupported !== "function") return "";
+          return ["audio/mp4", "audio/mp4;codecs=mp4a.40.2", "audio/aac", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"].find((t) => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || "";
+        }
+        const gemMime = (m) => { const b = String(m || "").split(";")[0].trim().toLowerCase(); return b === "audio/x-m4a" || b === "audio/m4a" || !b ? "audio/mp4" : b; };
+        const blob64 = (b) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] || ""); r.onerror = () => rej(r.error || new Error("讀取錄音失敗")); r.readAsDataURL(b); });
+        const gemText = (j) => (((j && j.candidates && j.candidates[0] && j.candidates[0].content) || {}).parts || []).filter((p) => !p.thought).map((p) => p.text || "").join("");
+        function jsonOut(s) {
+          s = String(s || "").replace(/```json|```/g, "").trim();
+          try { return JSON.parse(s); } catch (e) {}
+          const a = s.indexOf("{"), b = s.lastIndexOf("}");
+          if (a >= 0 && b > a) { try { return JSON.parse(s.slice(a, b + 1)); } catch (e) {} }
+          return null;
+        }
+        // patient background for the prompt: no name / ID / phone / address / MRN
+        function dcCtx(p) {
+          if (!p) return "（未選病人）";
+          const T = (p.vpn || {}).tubes || {}, a = ((p.bill || {}).ac || {}), ep = p.acuteEpisode || {};
+          return [p.dx && "診斷：" + p.dx, (p.medList || []).length && "目前用藥：" + p.medList.map((m) => rxT(m)).join("；"),
+            TK.some((k) => T[k] && T[k].on === "有") && "管路：" + TK.filter((k) => T[k] && T[k].on === "有").map((k) => `${k}=${tNm(k, T[k])}${T[k].s ? " " + T[k].s : ""}`).join("、"),
+            "照護計畫：" + pgP(p).map((k) => PG[k][1]).join("、"), pgP(p).includes("acute") && a.ind && "急症適應症：" + a.ind,
+            (ep.abx || []).length && "已記錄抗生素：" + ep.abx.map(abxT).join("；")].filter(Boolean).map((s) => scrub(s, p)).join("\n");
+        }
+        function dcPrompt(p, kind) {
+          return "你是台灣居家醫療醫師的病歷助理。" + (kind === "audio" ? "附上的音檔" : "下面的文字（iPhone 鍵盤聽寫，可能有同音錯字，請依臨床語境更正）") +
+            "是醫師在病人家中口述的訪視內容，可能是台灣國語、台語（台灣閩南語）夾雜英文醫學名詞。\n" +
+            "病人背景（只用來辨識名詞與藥名，不要把沒有口述的內容寫進病歷）：\n" + dcCtx(p) + "\n今天日期：" + ymd(Date.now()) + "\n\n" +
+            "只回傳一個 JSON 物件：{\"transcript\":\"…\",\"soap\":\"…\",\"fields\":{…}}\n" +
+            "transcript：逐字稿，繁體中文；台語內容以通順的中文書寫；醫學名詞保留英文。\n" +
+            "soap：結構化 SOAP 病歷，繁體中文，醫學名詞與縮寫依臨床慣例用英文（如 BP、HR、SpO2、BT、RR、NG tube、Foley、pneumonia、UTI、Ceftriaxone）。四段，每段以「S：」「O：」「A：」「P：」開頭並換行條列；O 包含所有口述的生命徵象、血糖、疼痛分數、理學檢查。只寫口述中有的內容，沒提到的段落寫「未提及」；絕對不要捏造數值、診斷或藥物。不要寫病人姓名、身分證字號、電話。\n" +
+            "fields：口述中明確說出的值，找不到的鍵省略，不要猜：\n" +
+            "sys 收縮壓 mmHg、dia 舒張壓 mmHg、hr 心率 bpm、spo2 血氧 %、temp 體溫 °C、bw 體重 kg（數字）\n" +
+            "s：評估備註，症狀與觀察重點，繁體中文 ≤150 字\np：處置／醫囑重點，繁體中文 ≤150 字\n" +
+            `tubes：本次「實際更換」的管路鍵字串陣列，只能是 ${TK.join("|")}（${TK.map((k) => k + "=" + TN[k]).join("、")}）；只是提到、沒有更換的不要列\n` +
+            `abx：口述中新開立或調整的抗生素陣列 [{"n":"藥名（英文學名）","r":"IV|IM|PO 其一","d":"劑量","f":"${AFQ.join("|")} 其一","s":"起日 YYYY-MM-DD","why":"改藥原因（若有）"}]；沒有就省略`;
+        }
+        const VR = { sys: [50, 260], dia: [20, 160], hr: [20, 220], spo2: [50, 100], temp: [30, 45], bw: [1, 250] };
+        const VL = { sys: "收縮壓", dia: "舒張壓", hr: "心率", spo2: "血氧", temp: "體溫", bw: "體重", s: "評估備註", p: "處置/醫囑" };
+        function dcClean(f, p) {
+          const r = {}; if (!f || typeof f !== "object") return r;
+          VF.forEach((k) => { const n = parseFloat(String(f[k] == null ? "" : f[k]).replace(/[^\d.]/g, "")); if (!isNaN(n) && n >= VR[k][0] && n <= VR[k][1]) r[k] = String(n); });
+          ["s", "p"].forEach((k) => { const s = f[k] == null ? "" : String(f[k]).trim(); if (s) r[k] = s.slice(0, 500); });
+          const T = (p && p.vpn && p.vpn.tubes) || {};
+          const tb = (Array.isArray(f.tubes) ? f.tubes : []).map(String).filter((k) => TK.includes(k) && T[k] && T[k].on === "有");
+          if (tb.length) r.tubes = [...new Set(tb)];
+          if (p && pgP(p).includes("acute")) {
+            const S = (v) => (v == null ? "" : String(v).trim());
+            const ab = (Array.isArray(f.abx) ? f.abx : []).filter((x) => x && S(x.n)).map((x) => ({ n: S(x.n).replace(/[,，]/g, " "), r: O("IV/IM/PO").includes(S(x.r).toUpperCase()) ? S(x.r).toUpperCase() : "", d: S(x.d), f: AFQ.includes(S(x.f).toUpperCase()) ? S(x.f).toUpperCase() : "", s: ISO.test(S(x.s)) ? S(x.s) : "", e: "", inf: false, why: S(x.why) }));
+            if (ab.length) r.abx = ab;
+          }
+          return r;
+        }
+        function dcSoapStr(x) {
+          if (!x) return "";
+          if (typeof x === "string") return x.trim();
+          if (typeof x === "object") return ["S", "O", "A", "P"].map((k) => { const v = x[k] != null ? x[k] : x[k.toLowerCase()]; return `${k}：${Array.isArray(v) ? v.join("\n") : v || "未提及"}`; }).join("\n");
+          return String(x);
+        }
+        // UI: one block, used on the visit tab (draft) and in a saved visit's sheet
+        function dcUI(box, o) {
+          if (!box) return;
+          box._dc = o;
+          const hasRec = dcMime() !== null && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+          box.innerHTML = `<p class="x-hint" style="margin: 0 0 8px">${o.mode === "draft" ? "看完病人後按「🎙 開始口述」說出 S/O/A/P（國語、台語混合都可），說完按「停止並整理」；生命徵象等數值會列出建議，按「確認填入」才寫入。" : "補錄或修改這次訪視的 SOAP，修改會直接存在這筆紀錄。"}錄音不保存，請避免說出姓名、身分證字號、電話。</p>
+            <button type="button" class="x-btn x-btn--primary" data-dc="rec">🎙 開始口述</button>
+            <div class="x-rec" data-dc-bar hidden><span class="x-rec__dot" aria-hidden="true"></span><b data-dc-time aria-live="off">00:00</b><button type="button" class="x-btn x-btn--sm x-btn--danger" data-dc="stop">■ 停止並整理</button><button type="button" class="x-btn x-btn--sm" data-dc="cancel">取消</button></div>
+            <p class="x-hint x-dc-st" data-dc-st aria-live="polite">${hasRec ? "" : "這個瀏覽器不支援網頁錄音，請用下方「⌨️ 改用鍵盤聽寫」"}</p>
+            <div class="x-row" data-dc-retry hidden style="margin-top: 6px"><button type="button" class="x-btn x-btn--sm" data-dc="retry">↻ 重送剛才的錄音</button></div>
+            <details class="x-bs" data-dc-kb${hasRec ? "" : " open"}><summary><span class="x-tri">▶</span>⌨️ 改用鍵盤聽寫（備用）</summary>
+              <p class="x-hint" style="margin: 0 0 6px">點下方文字框 → iPhone 鍵盤右下角 🎤 聽寫 → 說完再按「整理成 SOAP」</p>
+              <label class="x-f"><textarea data-dc-in placeholder="口述內容（可用鍵盤 🎤 聽寫）" aria-label="口述文字"></textarea></label>
+              <button type="button" class="x-btn" data-dc="txt">整理成 SOAP</button></details>
+            <label class="x-f" style="margin-top: 10px">SOAP（可修改）<textarea class="x-soap" data-dc-out placeholder="S：&#10;O：&#10;A：&#10;P：">${esc(o.get())}</textarea></label>
+            <div class="x-row" style="margin-top: 0"><button type="button" class="x-btn x-btn--primary" data-dc="copy">📋 複製 SOAP（貼到展望）</button>${o.mode === "draft" ? '<button type="button" class="x-btn" data-dc="clear">清除</button>' : ""}</div>
+            <details class="x-bs" data-dc-txw${o.tx() ? "" : " hidden"}><summary><span class="x-tri">▶</span>逐字稿</summary><pre class="x-pre" data-dc-tx>${esc(o.tx())}</pre></details>
+            ${o.mode === "draft" ? '<div class="x-dcf" data-dc-fill></div>' : ""}`;
+          const out = box.querySelector("[data-dc-out]");
+          out.addEventListener("input", () => o.set(out.value, null));
+          box.onclick = (e) => {
+            const b = e.target.closest("[data-dc]"); if (!b) return;
+            const k = b.dataset.dc;
+            if (k === "rec") dcStart(box, o);
+            else if (k === "stop") dcStop(false);
+            else if (k === "cancel") dcStop(true);
+            else if (k === "retry") { if (dcLast) dcRun(box, o, dcLast.parts, "audio"); }
+            else if (k === "txt") { const t = box.querySelector("[data-dc-in]").value.trim(); if (!t) return dcSt(box, "請先輸入或用鍵盤 🎤 聽寫口述內容", 1); dcRun(box, o, [{ text: "口述文字：\n" + t }], "text"); }
+            else if (k === "copy") { const s = out.value.trim(); s ? copyText(s) : toast("SOAP 是空的"); }
+            else if (k === "clear") { if (!out.value.trim() || confirm("清除 SOAP 與逐字稿？")) { out.value = ""; draft.soap = ""; draft.soapTx = ""; saveDraft(); const w = box.querySelector("[data-dc-txw]"); w.hidden = true; } }
+            else if (k === "ok") dcApply(box);
+            else if (k === "no") { dcPend = null; dcFill(box); dcSt(box, "已略過 AI 建議欄位"); }
+          };
+          if (o.mode === "draft") dcFill(box);
+        }
+        function dcSync() {
+          const box = $("dc-v"); if (!box || !box._dc) return;
+          const out = box.querySelector("[data-dc-out]"); if (out && document.activeElement !== out && !dcBusy) out.value = draft.soap || "";
+        }
+        function dcSt(box, m, err) { const el = box && box.querySelector("[data-dc-st]"); if (el) { el.textContent = m; el.classList.toggle("x-err", !!err); } }
+        function dcBtns(box, on) { if (!box) return; box.querySelectorAll('[data-dc="rec"],[data-dc="txt"],[data-dc="retry"]').forEach((b) => (b.disabled = !on)); }
+        function dcKb(box) { const d = box && box.querySelector("[data-dc-kb]"); if (d) d.open = true; }
+        async function dcStart(box, o) {
+          if (dcRec) return toast("已在錄音中");
+          if (dcBusy) return toast("整理中，請稍候");
+          if (!set.key) return dcSt(box, "未設定 Gemini 金鑰（設定頁）。可先用下方鍵盤聽寫把內容打好，設定金鑰後再整理", 1);
+          if (!window.isSecureContext) { dcKb(box); return dcSt(box, "錄音需要 https 網址（請從主畫面圖示或 https 網址開啟），請改用下方鍵盤聽寫", 1); }
+          const mime = dcMime();
+          if (mime === null || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { dcKb(box); return dcSt(box, "這個瀏覽器不支援網頁錄音（iPhone 需 iOS 14.5 以上 Safari），請改用下方鍵盤聽寫", 1); }
+          if (!aiOk()) return dcSt(box, "已取消");
+          let stream;
+          try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+          catch (e) {
+            dcKb(box);
+            const n = e && e.name;
+            return dcSt(box, n === "NotAllowedError" || n === "SecurityError" ? "麥克風權限被拒絕：iPhone「設定 → Safari → 麥克風」改成「允許」（或網址列「大小」→ 網站設定 → 麥克風），再重新開啟 App；也可改用下方鍵盤聽寫"
+              : n === "NotFoundError" || n === "OverconstrainedError" ? "找不到麥克風，請改用下方鍵盤聽寫"
+              : n === "NotReadableError" || n === "AbortError" ? "麥克風被其他 App 占用（例如通話中、其他錄音），結束後再試，或改用下方鍵盤聽寫"
+              : "無法開啟麥克風：" + ((e && e.message) || n || "未知錯誤") + "，請改用下方鍵盤聽寫", 1);
+          }
+          let mr;
+          try { mr = new MediaRecorder(stream, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: 32000 }); }
+          catch (e) { try { mr = new MediaRecorder(stream); } catch (e2) { stream.getTracks().forEach((t) => t.stop()); dcKb(box); return dcSt(box, "無法開始錄音（" + ((e2 && e2.message) || "MediaRecorder 錯誤") + "），請改用下方鍵盤聽寫", 1); } }
+          const rec = (dcRec = { mr, stream, chunks: [], t0: Date.now(), box, o, mime: mr.mimeType || mime, cancel: false, err: "" });
+          mr.ondataavailable = (e) => { if (e.data && e.data.size) rec.chunks.push(e.data); };
+          mr.onerror = (e) => { rec.err = (e && e.error && (e.error.message || e.error.name)) || "錄音錯誤"; try { if (mr.state !== "inactive") mr.stop(); } catch (x) { dcStopped(rec); } };
+          mr.onstop = () => dcStopped(rec);
+          try { mr.start(1000); } catch (e) { stream.getTracks().forEach((t) => t.stop()); dcRec = null; dcKb(box); return dcSt(box, "無法開始錄音：" + ((e && e.message) || "未知錯誤") + "，請改用下方鍵盤聽寫", 1); }
+          const bar = box.querySelector("[data-dc-bar]"), tm = box.querySelector("[data-dc-time]");
+          bar.hidden = false; box.querySelector('[data-dc="rec"]').hidden = true; box.querySelector("[data-dc-retry]").hidden = true;
+          dcSt(box, `錄音中…說完按「停止並整理」（最長 ${DC_MAX / 60} 分鐘）`);
+          rec.timer = setInterval(() => { const s = Math.floor((Date.now() - rec.t0) / 1000); if (tm.isConnected) tm.textContent = mmss(s) + " / " + mmss(DC_MAX); if (s >= DC_MAX) { toast("已達 10 分鐘，自動停止"); dcStop(false); } }, 500);
+        }
+        function dcStop(cancel) {
+          const rec = dcRec; if (!rec) return;
+          rec.cancel = cancel;
+          try { if (rec.mr.state !== "inactive") { if (rec.mr.requestData) try { rec.mr.requestData(); } catch (e) {} rec.mr.stop(); } else dcStopped(rec); } catch (e) { dcStopped(rec); }
+        }
+        async function dcStopped(rec) {
+          if (rec.done) return; rec.done = true;
+          clearInterval(rec.timer); rec.stream.getTracks().forEach((t) => t.stop());
+          if (dcRec === rec) dcRec = null;
+          const box = rec.box.isConnected ? rec.box : rec.o.mode === "draft" ? $("dc-v") : null, o = rec.o;
+          if (box) { const bar = box.querySelector("[data-dc-bar]"); if (bar) bar.hidden = true; const rb = box.querySelector('[data-dc="rec"]'); if (rb) rb.hidden = false; }
+          if (rec.cancel) { rec.chunks = []; return dcSt(box, "已取消錄音"); }
+          const secs = Math.round((Date.now() - rec.t0) / 1000), blob = new Blob(rec.chunks, { type: rec.mime || "audio/mp4" }); rec.chunks = [];
+          if (rec.err && !blob.size) { dcKb(box); return dcSt(box, "錄音失敗：" + rec.err + "，請改用下方鍵盤聽寫", 1); }
+          if (secs < 2 || blob.size < 2000) return dcSt(box, "錄音太短或沒有收到聲音，請再錄一次（或改用鍵盤聽寫）", 1);
+          if (blob.size > DC_MB) { dcKb(box); return dcSt(box, "錄音檔太大（超過 14 MB），請分段口述或改用鍵盤聽寫", 1); }
+          let data;
+          try { data = await blob64(blob); } catch (e) { dcKb(box); return dcSt(box, "讀取錄音失敗，請改用下方鍵盤聽寫", 1); }
+          dcLast = { parts: [{ inline_data: { mime_type: gemMime(blob.type || rec.mime), data } }] };
+          dcRun(box, o, dcLast.parts, "audio", secs);
+        }
+        async function dcRun(box, o, parts, kind, secs) {
+          if (dcBusy) return toast("整理中，請稍候");
+          if (!set.key) return dcSt(box, "未設定 Gemini 金鑰（設定頁）", 1);
+          if (kind === "text" && !aiOk()) return dcSt(box, "已取消");
+          const p = patients.find((x) => x.id === o.pid());
+          dcBusy = true; dcBtns(box, false);
+          const st = (m) => dcSt(box && box.isConnected ? box : null, m);
+          st(kind === "audio" ? `錄音 ${mmss(secs || 0)} 送 Gemini 轉寫整理中…（約 10–60 秒，請勿關閉）` : "送 Gemini 整理中…");
+          try {
+            const { j, model } = await gemini(set.key, { contents: [{ parts: [{ text: dcPrompt(p, kind) }, ...parts] }], generationConfig: { responseMimeType: "application/json", temperature: 0.2 } }, st, false, null, 120000);
+            const raw = gemText(j), out = jsonOut(raw);
+            let soap = out ? dcSoapStr(out.soap) : "", tx = out ? String(out.transcript || "").trim() : "";
+            if (!out && raw.trim()) soap = raw.trim(); // model ignored JSON: keep the text
+            if (!soap) throw Object.assign(new Error(raw.trim() ? "無法解析結果" : "沒有辨識出內容（可能沒有聲音）"), { parse: 1 });
+            soap = scrub(soap, p);
+            const cur = o.get().trim();
+            if (cur && cur !== soap && !confirm("已經有 SOAP 內容。\n按「確定」以新結果取代；按「取消」接在原內容後面。")) soap = cur + "\n\n" + soap;
+            o.set(soap, tx);
+            if (kind === "audio") dcLast = null;
+            const b = box && box.isConnected ? box : o.mode === "draft" ? $("dc-v") : null;
+            if (b) {
+              b.querySelector("[data-dc-out]").value = soap; b.querySelector("[data-dc-retry]").hidden = true;
+              const w = b.querySelector("[data-dc-txw]"); if (tx) { w.hidden = false; b.querySelector("[data-dc-tx]").textContent = tx; }
+              if (kind === "text") b.querySelector("[data-dc-in]").value = "";
+            }
+            let n = 0;
+            if (o.mode === "draft") { const f = dcClean(out && out.fields, p); dcPend = Object.keys(f).length ? { f, pid: p ? p.id : "" } : null; n = dcPend ? Object.keys(f).length : 0; if (b) dcFill(b); }
+            dcSt(b, `已整理成 SOAP（模型：${model}）${n ? "；下方有 AI 建議欄位，請核對後按「確認填入」" : ""}。請核對內容再複製`);
+          } catch (err) {
+            const b = box && box.isConnected ? box : o.mode === "draft" ? $("dc-v") : null;
+            const msg = err && err.parse ? "整理失敗：" + err.message : err && err.status != null ? gemErr("整理失敗", err) : "整理失敗：" + ((err && err.message) || "未知錯誤");
+            const audioHint = kind === "audio" ? (err && err.status === 400 ? "（可能是這種錄音格式不被接受）" : "") + "。可按「重送剛才的錄音」，或改用下方鍵盤聽寫" : "，請稍後再試";
+            dcSt(b, msg + audioHint, 1);
+            if (b && kind === "audio" && dcLast) { b.querySelector("[data-dc-retry]").hidden = false; dcKb(b); }
+          } finally { dcBusy = false; dcBtns(box && box.isConnected ? box : $("dc-v"), true); }
+        }
+        // AI-suggested fields: empty → checked; already filled → unchecked (tick to overwrite). Nothing is written until 確認填入.
+        function dcFill(box) {
+          const el = box.querySelector("[data-dc-fill]"); if (!el) return;
+          const P = dcPend; if (!P || P.pid !== (draft.pid || "")) { el.innerHTML = ""; return; }
+          const f = P.f, rows = [], p = patients.find((x) => x.id === P.pid);
+          const ln = (key, label, val, cur, on) => `<label class="x-keep x-aip"><input type="checkbox" data-dcf="${esc(key)}"${on ? " checked" : ""}><span><b>${esc(label)}</b>：${esc(val)}${cur ? ` <span class="chip">目前：${esc(cur)}，勾選才覆寫</span>` : ""}</span></label>`;
+          [...VF, "s", "p"].forEach((k) => { if (f[k] == null) return; const c = $(k === "s" ? "v-s" : k === "p" ? "v-p" : k).value.trim(); if (c === f[k]) return; rows.push(ln(k, VL[k], f[k], c, !c)); });
+          const T = (p && p.vpn && p.vpn.tubes) || {};
+          (f.tubes || []).forEach((k) => { const cb = document.querySelector(`[data-tc="${k}"]`); if (!cb || cb.checked) return; rows.push(ln("t:" + k, "本次更換管路", tChg(k, T[k]), "", true)); });
+          const ex = ((p && p.acuteEpisode) || {}).abx || [];
+          (f.abx || []).forEach((x, i) => { const dup = ex.some((y) => (y.n || "").toLowerCase() === x.n.toLowerCase()); rows.push(`<label class="x-keep x-aip"><input type="checkbox" data-dcf="a:${i}"${dup ? "" : " checked"}><span><b>加入 Clinical course 抗生素</b>：${esc(abxT(x))}${dup ? ' <span class="chip">已有同名藥，勾選另加一列</span>' : ""}</span></label>`); });
+          el.innerHTML = rows.length ? `<p class="x-vh" style="margin-top: 0">AI 建議填入（請核對）</p><p class="x-hint" style="margin: 0 0 6px">空白欄位已勾選；已有值的欄位不勾，勾選才會覆寫。按「確認填入」才寫入，填入的欄位會加黃框</p>${rows.join("")}<div class="x-row"><button type="button" class="x-btn x-btn--primary" data-dc="ok">確認填入</button><button type="button" class="x-btn" data-dc="no">略過</button></div>` : "";
+          if (!rows.length) dcPend = null;
+        }
+        function dcApply(box) {
+          const P = dcPend; if (!P) return;
+          if (P.pid !== (draft.pid || "")) { dcPend = null; dcFill(box); return toast("病人已更換，未套用"); }
+          const f = P.f, p = patients.find((x) => x.id === P.pid); let n = 0;
+          box.querySelectorAll("[data-dcf]:checked").forEach((c) => {
+            const k = c.dataset.dcf;
+            if (k.startsWith("t:")) { const cb = document.querySelector(`[data-tc="${k.slice(2)}"]`); if (cb) { cb.checked = true; cb.closest("label").classList.add("x-ai"); n++; } }
+            else if (k.startsWith("a:")) { const x = f.abx[+k.slice(2)]; if (x && p) { const ep = p.acuteEpisode || (p.acuteEpisode = { end: "", reason: "" }); ep.abx = ep.abx || []; ep.abx.push({ ...x }); savePat(); n++; } }
+            else { const el = $(k === "s" ? "v-s" : k === "p" ? "v-p" : k); if (el && f[k] != null) { el.value = f[k]; el.classList.add("x-ai"); if (VF.includes(k)) check(k); n++; } }
+          });
+          dcPend = null; dcFill(box);
+          dcSt(box, n ? `已填入 ${n} 項（黃框＝AI 填入，請核對；改過的欄位黃框會消失）` : "沒有勾選任何欄位");
+          if (n) $("sys").closest(".x-card").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        function dcAiClear() { document.querySelectorAll("#p-visit .x-ai").forEach((el) => el.classList.remove("x-ai")); }
+        [...VF, "v-s", "v-p"].forEach((id) => $(id).addEventListener("input", (e) => e.target.classList.remove("x-ai")));
+        $("v-tubes").addEventListener("change", (e) => { const l = e.target.closest("label"); if (l) l.classList.remove("x-ai"); });
+        $("v-pid").addEventListener("change", () => { if (dcPend) dcFill($("dc-v")); });
+
+        // ---- 去識別：身分證字號／居留證號、手機與市話、姓名 → 不送 Gemini ----
+        function scrub(s, p) {
+          s = String(s == null ? "" : s)
+            .replace(/\b[A-Z][1289ABCD]\d{8}\b/gi, "［已移除］")
+            .replace(/(\+?886[-\s]?|0)9\d{2}[-\s]?\d{3}[-\s]?\d{3}/g, "［已移除］")
+            .replace(/(\(0\d{1,2}\)|\b0\d{1,2})[-\s]?\d{3,4}[-\s]?\d{4}\b/g, "［已移除］");
+          if (p) { if (p.name && p.name.length > 1) s = s.split(p.name).join("病人"); if (p.nid) s = s.split(p.nid).join("［已移除］"); if (p.mrn && String(p.mrn).length > 3) s = s.split(String(p.mrn)).join("［已移除］"); }
+          return s;
+        }
+        function ageOf(dob) { const m = String(dob || "").match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/); if (!m) return ""; const t = new Date(); let a = t.getFullYear() - +m[1]; if (t.getMonth() + 1 < +m[2] || (t.getMonth() + 1 === +m[2] && t.getDate() < +m[3])) a--; return a >= 0 && a < 130 ? a + " 歲" : ""; }
+
+        // ---- 📝 一鍵個案摘要：p.aiSum {text, at, use}（隨病人存檔與 JSON 備份） ----
+        const SUM_USE = { 轉診: "轉診給接手的醫師或機構：精簡、專業，醫學名詞用英文", 急診: "急診就醫時給急診醫師：第一段先列最關鍵資訊（DNR、過敏、管路、目前抗生素、基準生命徵象與意識），再寫其他", 家屬: "給家屬或照顧者：白話、少用英文縮寫（必要時括號註明），說明目前狀況、照顧重點與出現哪些狀況要立即就醫" };
+        const SUM_SKIP = new Set(["phone", "addr", "cts", "vpnUp", "refDate", "refOrg", "meds", "intake"]);
+        function sumData(p) {
+          const L = [], vp = p.vpn || {}, a = ((p.bill || {}).ac) || {}, ep = p.acuteEpisode || {};
+          L.push("【基本】性別：" + (p.sex || "未記錄") + "　年齡：" + (ageOf(p.dob) || "未記錄") + "　收案狀態：" + (p.status || "未收案") + (p.close && p.status === "已結案" ? `（結案 ${p.close.date}・${p.close.reason}）` : ""));
+          L.push("照護計畫：" + pgP(p).map((k) => PG[k][1]).join("、"));
+          if (p.dx) L.push("診斷：" + p.dx);
+          const vl = [];
+          VF2.forEach((f) => { if (SUM_SKIP.has(f[0]) || f[2] === "cb" || (f[4] === "h" && vp.stage !== HOSP)) return; let s = ""; try { s = vTxt(f, vp); } catch (e) { s = ""; } if (s) vl.push(f[1] + "：" + s); });
+          if (vl.length) L.push("【收案評估／VPN】", ...vl);
+          const cts = (vp.cts || []).filter((m) => m && (m.r || m.o)).map((m) => [m.r, m.o && "醫療決策代理人順位 " + m.o].filter(Boolean).join(" "));
+          if (cts.length) L.push("主要聯絡人關係：" + cts.join("；"));
+          L.push("【目前用藥】", ...((p.medList || []).length ? p.medList.map((m) => "・" + rxT(m, 1)) : ["未記錄"]));
+          if (p.meds) L.push("用藥備註：" + p.meds);
+          if (p.lab) L.push("【最近檢驗】", p.lab);
+          if (p.note) L.push("【備註】", p.note);
+          if (pgP(p).includes("acute") && a.d) {
+            L.push("【居家急症】收案日 " + a.d + "　適應症：" + (a.ind || "未填") + (ep.end ? `　結案 ${ep.end}${ep.reason ? "・" + ep.reason : ""}` : ""));
+            if ((ep.abx || []).length) L.push("抗生素：", ...ep.abx.map((x) => "・" + abxT(x)));
+            if (ep.cx) L.push("培養／菌株／敏感性：" + ep.cx);
+          }
+          const vs = visits.filter((v) => v.pid === p.id).sort((x, y) => y.arrive - x.arrive).slice(0, 5).reverse();
+          L.push(`【最近 ${vs.length} 次訪視（舊→新）】`);
+          if (!vs.length) L.push("無訪視紀錄");
+          vs.forEach((v) => {
+            const t = v.vitals || {}, o = [];
+            if (t.sys || t.dia) o.push(`BP ${t.sys || "?"}/${t.dia || "?"}`); if (t.hr) o.push("HR " + t.hr); if (t.spo2) o.push("SpO2 " + t.spo2 + "%"); if (t.temp) o.push("BT " + t.temp); if (t.bw) o.push("BW " + t.bw + "kg");
+            const ai = accInfo(v, p);
+            L.push(`◆ ${fDate(v.arrive)}　${PG[pgOf(v)][1]}　${v.role || "醫師"}${ai ? "　急症 " + ai.day : ""}${v.emg ? "　緊急訪視" + (v.emg.ind ? "（" + v.emg.ind + "）" : "") : ""}`,
+              ...(o.length ? ["生命徵象：" + o.join(", ")] : []), ...(v.s ? ["評估：" + v.s] : []), ...(v.p ? ["處置：" + v.p] : []), ...(v.tch || []), ...(v.soap ? ["SOAP：", v.soap] : []));
+          });
+          return scrub(L.join("\n"), p);
+        }
+        function sumHead(p) {
+          return [`個案摘要　${fDate(Date.now())}`, `姓名：${p.name || ""}　性別：${p.sex || ""}　年齡：${ageOf(p.dob) || ""}${p.mrn ? "　病歷號：" + p.mrn : ""}`, `照護院所：${(fee && fee.clinic) || "白惠文西醫診所"}　記錄者：${set.role || "醫師"} ${set.doctor || ""}`, ""].join("\n");
+        }
+        let sumUse = "轉診";
+        function sumSheet(p) {
+          if (!p) return;
+          const s = p.aiSum || {};
+          openSheet(`<h2>📝 個案摘要・${esc(p.name)}</h2>
+            <p class="x-hint" style="margin: 0 0 8px">送 Gemini 的資料：診斷、病史、用藥、管路、照護計畫、急症病程與最近 5 次訪視；<b>不含</b>姓名、身分證字號、電話、地址、病歷號。姓名等基本資料只在手機上加到開頭。</p>
+            <p class="x-vh" style="margin-top: 0">用途</p><div class="x-types" id="sum-use">${Object.keys(SUM_USE).map((k) => `<button type="button" class="x-type" data-use="${k}" aria-pressed="${k === sumUse}">${k}</button>`).join("")}</div>
+            <div class="x-row"><button type="button" class="x-btn x-btn--primary" id="sum-go">${s.text ? "↻ 重新產生摘要" : "產生摘要"}</button></div>
+            <p class="x-hint x-dc-st" id="sum-st" aria-live="polite">${s.at ? `上次產生：${esc(twStamp(s.at))}（${esc(s.use || "")}）；修改會自動保存` : ""}</p>
+            <label class="x-f" style="margin-top: 10px">摘要（可修改）<textarea class="x-soap" id="sum-out" style="min-height: 320px !important" placeholder="按「產生摘要」">${esc(s.text || "")}</textarea></label>
+            <div class="x-row" style="margin-top: 0"><button type="button" class="x-btn x-btn--primary" id="sum-copy">📋 複製</button><button type="button" class="x-btn" id="sum-print">🖨 列印／PDF</button>${navigator.share ? '<button type="button" class="x-btn" id="sum-share">分享</button>' : ""}</div>
+            <p class="fineprint">AI 摘要，請核對後再交付；內容以病歷為準</p>
+            <div class="x-row"><button class="x-btn" data-close>關閉</button></div>`);
+          const out = $("sum-out"), st = (m, e) => { const el = $("sum-st"); if (el) { el.textContent = m; el.classList.toggle("x-err", !!e); } };
+          let tmr; out.addEventListener("input", () => { clearTimeout(tmr); tmr = setTimeout(() => { p.aiSum = { ...(p.aiSum || {}), text: out.value, at: (p.aiSum || {}).at || Date.now(), use: (p.aiSum || {}).use || sumUse }; savePat(); }, 500); });
+          $("sum-use").onclick = (e) => { const b = e.target.closest("[data-use]"); if (!b) return; sumUse = b.dataset.use; $("sum-use").querySelectorAll("[data-use]").forEach((x) => x.setAttribute("aria-pressed", x.dataset.use === sumUse)); };
+          $("sum-copy").onclick = () => { const t = out.value.trim(); t ? copyText(t) : toast("摘要是空的"); };
+          $("sum-print").onclick = () => { const t = out.value.trim(); if (!t) return toast("摘要是空的"); printText(t); };
+          if ($("sum-share")) $("sum-share").onclick = () => { const t = out.value.trim(); if (!t) return toast("摘要是空的"); navigator.share({ title: "個案摘要", text: t }).catch(() => {}); };
+          $("sum-go").onclick = async () => {
+            if (!set.key) return st("未設定 Gemini 金鑰（設定頁）", 1);
+            if (out.value.trim() && !confirm("重新產生會取代目前的摘要（含你的修改）。繼續？")) return;
+            if (!aiOk()) return st("已取消");
+            const btn = $("sum-go"); btn.disabled = true; st("送 Gemini 產生摘要中…（約 10–40 秒）");
+            const use = sumUse;
+            const prompt = "你是台灣居家醫療醫師。根據下面已去識別化的病人資料，寫一份一頁（約 400–700 字）的繁體中文個案摘要。\n用途：" + use + "，" + SUM_USE[use] + "。\n" +
+              "規則：只根據提供的資料，不要捏造；資料沒有的項目省略或寫「未記錄」。醫學名詞依臨床慣例用英文（家屬版除外）。不要寫姓名、身分證字號、電話、地址。純文字，不要 Markdown 符號（不要 *、#、表格），用【】做段落標題，條列用「・」。\n" +
+              "段落依序：【主要診斷與問題】【病史與過敏】【目前用藥】【管路與傷口】【功能與照護狀態】（意識、ADL、DNR、照護階段）【近期訪視與生命徵象趨勢】（整理最近幾次的趨勢與變化，不要逐筆照抄）【檢驗】【抗生素與培養】（有才寫）【目前處置與計畫】【注意事項】。\n" +
+              "開頭不要再寫標題、日期或基本資料（手機會自動加上）。\n\n病人資料：\n" + sumData(p);
+            try {
+              const { j, model } = await gemini(set.key, { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.3 } }, (m) => st(m), false, null, 90000);
+              let t = gemText(j).replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/^\s*[*-]\s+/gm, "・").trim();
+              if (!t) throw Object.assign(new Error("沒有產生內容"), { parse: 1 });
+              t = sumHead(p) + t;
+              p.aiSum = { text: t, at: Date.now(), use }; savePat();
+              if ($("sum-out")) { $("sum-out").value = t; st(`已產生（${use}版，模型：${model}），請核對後再複製或列印`); }
+            } catch (err) { st(err && err.parse ? "產生失敗：" + err.message : err && err.status != null ? gemErr("產生失敗", err) : "產生失敗：" + ((err && err.message) || "未知錯誤"), 1); }
+            finally { if ($("sum-go")) $("sum-go").disabled = false; }
+          };
+        }
+        function printText(t) {
+          let el = $("x-print"); if (!el) { el = document.createElement("div"); el.id = "x-print"; document.body.appendChild(el); }
+          el.textContent = t; document.documentElement.classList.add("x-prt");
+          const done = () => { document.documentElement.classList.remove("x-prt"); window.removeEventListener("afterprint", done); };
+          window.addEventListener("afterprint", done);
+          setTimeout(() => { try { window.print(); } catch (e) { toast("無法列印，請用「分享」或「複製」"); } }, 50);
+        }
+
         stMig(); tMig(); mdMig(); savePat();
+        dcUI($("dc-v"), dcDraft);
 
         migratePhotos();
         showTab("visit");
